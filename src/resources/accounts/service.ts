@@ -1,7 +1,7 @@
 import { db } from "@src/db";
 import { and, eq } from "drizzle-orm";
 import { AccountMembershipsTable, AccountsTable } from "./schema";
-import { AccountRole } from "./types";
+import { AccountMembership } from "./types";
 
 export default {
   deleteAccount: (accountId: string) =>
@@ -18,7 +18,7 @@ export default {
       name: "Default Account",
     }).returning(),
 
-  addMembership: async (accountId: string, userId: string, role: AccountRole) => {
+  addMembership: async (accountId: string, userId: string, roles: string[]) => {
     const existing = await db.query.account_memberships.findFirst({
       where: (membership, { eq, and }) =>
         and(eq(membership.accountId, accountId), eq(membership.userId, userId)),
@@ -26,10 +26,14 @@ export default {
     if (existing) {
       throw new Error("User is already a member of this account");
     }
-    if (role === "OWNER") {
+    if (roles.includes("OWNER")) {
+      // Check if any membership for this account already has OWNER in roles array
       const owner = await db.query.account_memberships.findFirst({
-        where: (membership, { eq, and }) =>
-          and(eq(membership.accountId, accountId), eq(membership.role, "OWNER")),
+        where: (membership, { eq, and, sql }) =>
+          and(
+            eq(membership.accountId, accountId),
+            sql`${membership.roles} @> ARRAY['OWNER']::varchar[]`
+          ),
       });
       if (owner) {
         throw new Error("This account already has an owner");
@@ -38,7 +42,7 @@ export default {
     return db.insert(AccountMembershipsTable).values({
       accountId,
       userId,
-      role,
+      roles,
       joinedAt: new Date(),
     });
   },

@@ -57,6 +57,13 @@
       "when": 1751740883495,
       "tag": "0007_cultured_solo",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1751756428398,
+      "tag": "0008_ancient_fantastic_four",
+      "breakpoints": true
     }
   ]
 }

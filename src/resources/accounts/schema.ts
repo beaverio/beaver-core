@@ -12,13 +12,13 @@ export const AccountsTable = pgTable('accounts', {
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date()).notNull(),
 })
 
-export const ACCOUNT_ROLE_VALUES = ["OWNER", "READ/WRITE", "READ"] as const
-export const AccountRoles = pgEnum('account_roles', ACCOUNT_ROLE_VALUES)
+export const ACCOUNT_ROLE_VALUES = ["OWNER", "WRITE", "READ"] as const;
+
 
 export const AccountMembershipsTable = pgTable('account_memberships', {
   accountId: uuid('account_id').notNull().references(() => AccountsTable.id, { onDelete: "cascade" }),
   userId: uuid('user_id').notNull().references(() => UsersTable.id),
-  role: AccountRoles('role').default('OWNER').notNull(),
+  roles: varchar('roles', { length: 255 }).array().notNull().default(['OWNER']),
   invitedAt: timestamp('invited_at').defaultNow().notNull(),
   joinedAt: timestamp('joined_at'),
 },
@@ -28,7 +28,7 @@ export const AccountMembershipsTable = pgTable('account_memberships', {
       columns: [table.accountId, table.userId],
     })
   ]
-)
+);
 
 export const accountsRelations = relations(AccountsTable, ({ many, one }) => ({
   memberships: many(AccountMembershipsTable),
@@ -57,5 +57,5 @@ export const createAccountSchema = createInsertSchema(AccountsTable)
 
 export const createMembershipSchema = z.object({
   userId: z.string(),
-  role: z.enum(ACCOUNT_ROLE_VALUES),
+  roles: z.array(z.enum(ACCOUNT_ROLE_VALUES)).min(1),
 });

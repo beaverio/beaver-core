@@ -5,7 +5,7 @@ import accountService from "./service";
 export async function createAccount(req: Request, res: Response) {
   const { primaryUserId } = req.body;
   const [account] = await accountService.createAccount(primaryUserId);
-  await accountService.addMembership(account.id, primaryUserId, "OWNER");
+  await accountService.addMembership(account.id, primaryUserId, ["OWNER", "READ", "WRITE"]);
   res.status(201).json({ account });
 }
 
@@ -16,7 +16,7 @@ export async function deleteAccount(req: Request, res: Response) {
 }
 
 export async function addMember(req: Request, res: Response) {
-  const { userId, role } = req.body;
+  const { userId, roles } = req.body;
   const accountId = req.params.accountId;
 
   const userToAdd = await userService.findById(userId);
@@ -31,6 +31,6 @@ export async function addMember(req: Request, res: Response) {
     return;
   }
 
-  await accountService.addMembership(accountId, userId, role);
-  res.status(201).json({ message: `User added as ${role}` });
+  await accountService.addMembership(accountId, userId, roles);
+  res.status(201).json({ message: `User added with roles: ${roles.join(", ")}` });
 }

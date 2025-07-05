@@ -12,10 +12,10 @@ export function requireRoleGeneric({
   requiredRoles,
 }: {
   getResourceId: (req: Request) => string | undefined,
-  getMembership: (userId: string, resourceId: string) => Promise<{ role: string } | null>,
+  getMembership: (userId: string, resourceId: string) => Promise<{ roles: string[] } | null>,
   requiredRoles: string | string[],
 }) {
-  const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+  const required = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
   return async function (req: Request, res: Response, next: NextFunction) {
     try {
       const auth0Id = req.auth?.sub;
@@ -30,8 +30,8 @@ export function requireRoleGeneric({
         return;
       }
       const membership = await getMembership(user.id, resourceId);
-      if (!membership || !roles.includes(membership.role)) {
-        res.status(403).json({ error: `Requires role: ${roles.join(", ")}` });
+      if (!membership || !required.every(r => membership.roles.includes(r))) {
+        res.status(403).json({ error: `Requires permissions: ${required.join(", ")}` });
         return;
       }
       (req as any).membership = membership;

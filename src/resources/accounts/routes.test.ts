@@ -14,7 +14,7 @@ jest.mock('./controller', () => ({
   __esModule: true,
   createAccount: jest.fn((req, res) => res.status(201).json({ account: { id: 'acc-1', primaryUserId: 'user-1' } })),
   deleteAccount: jest.fn((req, res) => res.status(204).send()),
-  addMember: jest.fn((req, res) => res.status(201).json({ message: 'User added as READ' })),
+  addMember: jest.fn((req, res) => res.status(201).json({ message: 'User added with roles: READ' })),
 }));
 
 const app = express();
@@ -39,8 +39,8 @@ describe('Accounts Routes', () => {
   it('POST /accounts/:accountId/members should return 201 and message', async () => {
     const res = await request(app)
       .post('/accounts/acc-1/members')
-      .send({ userId: 'user-2', role: 'READ' });
+      .send({ userId: 'user-2', roles: ["READ"] });
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ message: 'User added as READ' });
+    expect(res.body).toEqual({ message: 'User added with roles: READ' });
   });
 });

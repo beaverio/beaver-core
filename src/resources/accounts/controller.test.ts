@@ -40,7 +40,7 @@ describe('accounts controller', () => {
       const res = httpMocks.createResponse();
       await controller.createAccount(req, res);
       expect(accountService.createAccount).toHaveBeenCalledWith('user-1');
-      expect(accountService.addMembership).toHaveBeenCalledWith('acc-1', 'user-1', 'OWNER');
+      expect(accountService.addMembership).toHaveBeenCalledWith('acc-1', 'user-1', ["OWNER", "READ", "WRITE"]);
       expect(res.statusCode).toBe(201);
       expect(res._getJSONData()).toEqual({ account: fakeAccount });
     });
@@ -50,18 +50,18 @@ describe('accounts controller', () => {
     it('should add a member if user exists and not already a member', async () => {
       userService.findById.mockResolvedValue(fakeUser);
       accountService.findMembershipByAccountAndUser.mockResolvedValue(undefined);
-      const req = httpMocks.createRequest({ params: { accountId: 'acc-1' }, body: { userId: 'user-2', role: 'READ' } });
+      const req = httpMocks.createRequest({ params: { accountId: 'acc-1' }, body: { userId: 'user-2', roles: ["READ"] } });
       const res = httpMocks.createResponse();
       await controller.addMember(req, res);
       expect(userService.findById).toHaveBeenCalledWith('user-2');
       expect(accountService.findMembershipByAccountAndUser).toHaveBeenCalledWith('acc-1', 'user-2');
-      expect(accountService.addMembership).toHaveBeenCalledWith('acc-1', 'user-2', 'READ');
+      expect(accountService.addMembership).toHaveBeenCalledWith('acc-1', 'user-2', ["READ"]);
       expect(res.statusCode).toBe(201);
-      expect(res._getJSONData()).toEqual({ message: 'User added as READ' });
+      expect(res._getJSONData()).toEqual({ message: 'User added with roles: READ' });
     });
     it('should return 404 if user does not exist', async () => {
       userService.findById.mockResolvedValue(undefined);
-      const req = httpMocks.createRequest({ params: { accountId: 'acc-1' }, body: { userId: 'user-2', role: 'READ' } });
+      const req = httpMocks.createRequest({ params: { accountId: 'acc-1' }, body: { userId: 'user-2', roles: ["READ"] } });
       const res = httpMocks.createResponse();
       await controller.addMember(req, res);
       expect(res.statusCode).toBe(404);
@@ -70,7 +70,7 @@ describe('accounts controller', () => {
     it('should return 409 if user is already a member', async () => {
       userService.findById.mockResolvedValue(fakeUser);
       accountService.findMembershipByAccountAndUser.mockResolvedValue({ ...fakeUser, accountId: 'acc-1' });
-      const req = httpMocks.createRequest({ params: { accountId: 'acc-1' }, body: { userId: 'user-2', role: 'READ' } });
+      const req = httpMocks.createRequest({ params: { accountId: 'acc-1' }, body: { userId: 'user-2', roles: ["READ"] } });
       const res = httpMocks.createResponse();
       await controller.addMember(req, res);
       expect(res.statusCode).toBe(409);

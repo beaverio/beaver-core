@@ -20,7 +20,7 @@ const { db } = require('@src/db');
 
 describe('accountService', () => {
   const fakeAccount = { id: 'acc-1', primaryUserId: 'user-1' };
-  const fakeMembership = { accountId: 'acc-1', userId: 'user-2', role: 'READ' };
+  const fakeMembership = { accountId: 'acc-1', userId: 'user-2', roles: ["READ"] };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -43,13 +43,13 @@ describe('accountService', () => {
     it('should add a membership if not exists', async () => {
       db.query.account_memberships.findFirst.mockResolvedValue(undefined);
       db.insert.mockReturnValue({ values: jest.fn().mockResolvedValue([fakeMembership]) });
-      const result = await accountService.addMembership('acc-1', 'user-2', 'READ');
+      const result = await accountService.addMembership('acc-1', 'user-2', ["READ"]);
       expect(db.query.account_memberships.findFirst).toHaveBeenCalled();
       expect(result).toBeDefined();
     });
     it('should throw if membership exists', async () => {
       db.query.account_memberships.findFirst.mockResolvedValue(fakeMembership);
-      await expect(accountService.addMembership('acc-1', 'user-2', 'READ')).rejects.toThrow();
+      await expect(accountService.addMembership('acc-1', 'user-2', ["READ"])).rejects.toThrow();
     });
   });
 

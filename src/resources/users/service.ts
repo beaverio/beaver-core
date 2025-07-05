@@ -18,7 +18,7 @@ export default {
       memberships: {
         columns: {
           accountId: true,
-          role: true,
+          roles: true,
           joinedAt: true,
         },
       },
