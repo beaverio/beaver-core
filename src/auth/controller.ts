@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Request, Response } from "express";
 import userService, { sanitize } from "../resources/users/service";
+import { User } from "../resources/users/types";
 
 export async function signup(req: Request, res: Response) {
   const { email, password, name } = req.body;
@@ -75,6 +76,7 @@ export async function login(req: Request, res: Response) {
         name: userInfo?.name,
         email
       });
+      // @ts-ignore
       user = createdUser;
     }
 
