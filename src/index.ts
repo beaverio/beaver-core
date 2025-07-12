@@ -10,10 +10,10 @@ import EmailPassword from 'supertokens-node/recipe/emailpassword';
 supertokens.init({
   framework: 'express',
   supertokens: {
-    connectionURI: process.env.SUPERTOKENS_CONNECTION_URI || 'http://localhost:3567',
+    connectionURI: process.env.SUPERTOKENS_CONNECTION_URI!,
   },
   appInfo: {
-    appName: 'Beaver Core',
+    appName: 'beaver-core',
     apiDomain: 'http://localhost:3000',
     websiteDomain: 'http://localhost:3000',
     apiBasePath: '/auth',

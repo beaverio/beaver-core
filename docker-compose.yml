@@ -1,71 +1,68 @@
 services:
-  # PostgreSQL Database (development only)
   postgres:
+    container_name: postgres
     image: postgres:15-alpine
+    ports:
+      - '5432:5432'
     environment:
-      POSTGRES_DB: beaver_db
+      POSTGRES_DB: beaver_core_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U postgres
       interval: 10s
       timeout: 5s
       retries: 5
     profiles:
       - development
-
-  # Redis Cache (development only)
   redis:
+    container_name: redis
     image: redis:7-alpine
     ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+      - '6379:6379'
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        - CMD
+        - redis-cli
+        - ping
       interval: 10s
       timeout: 5s
       retries: 5
     profiles:
       - development
-
-  # SuperTokens Core
   supertokens:
+    container_name: supertokens
     image: registry.supertokens.io/supertokens/supertokens-postgresql:latest
     depends_on:
       postgres:
         condition: service_healthy
-        required: false  # Only required in development
+        required: false
     ports:
-      - "3567:3567"
+      - '3567:3567'
     environment:
       POSTGRESQL_CONNECTION_URI: ${DATABASE_URL}
       REDIS_CONNECTION_URI: ${REDIS_URL}
     healthcheck:
-      test: >
+      test: |
         bash -c 'exec 3<>/dev/tcp/127.0.0.1/3567 && echo -e "GET /hello HTTP/1.1\r\nhost: 127.0.0.1:3567\r\nConnection: close\r\n\r\n" >&3 && cat <&3 | grep "Hello"'
       interval: 10s
       timeout: 5s
       retries: 10
-
-  # Express Application
-  app:
+  express:
+    container_name: express
     build: .
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-        required: false  # Only required in development
       redis:
-        condition: service_healthy  
-        required: false  # Only required in development
+        condition: service_healthy
       supertokens:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=${PORT:-3000}
@@ -74,14 +71,13 @@ services:
       - SUPERTOKENS_CONNECTION_URI=http://supertokens:3567
       - API_DOMAIN=${API_DOMAIN:-http://localhost:3000}
       - WEBSITE_DOMAIN=${WEBSITE_DOMAIN:-http://localhost:3000}
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      test:
+        - CMD
+        - curl
+        - '-f'
+        - http://localhost:3000/
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-volumes:
-  postgres_data:
-  redis_data:
