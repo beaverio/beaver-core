@@ -17,8 +17,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    profiles:
-      - development
   redis:
     container_name: redis
     image: redis:7-alpine
@@ -34,8 +32,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    profiles:
-      - development
   supertokens:
     container_name: supertokens
     image: registry.supertokens.io/supertokens/supertokens-postgresql:latest
@@ -59,12 +55,9 @@ services:
     build: .
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      supertokens:
-        condition: service_healthy
+      - postgres
+      - redis
+      - supertokens
     ports:
       - '3000:3000'
     environment:

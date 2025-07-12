@@ -21,7 +21,9 @@ supertokens.init({
   },
   recipeList: [
     EmailPassword.init(),
-    Session.init()
+    Session.init({
+      getTokenTransferMethod: () => "any"
+    })
   ]
 });
 
@@ -44,6 +46,7 @@ app.get('/', (req: Request, res: Response) => {
 // Protected route
 app.get('/protected', verifySession(), (req: SessionRequest, res: Response) => {
   const session = req.session!;
+  console.log(req.session)
   res.json({
     message: 'Protected content',
     userId: session.getUserId()
