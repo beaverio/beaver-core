@@ -74,7 +74,6 @@ This application runs multiple services orchestrated by Docker Compose:
 - `POST /auth/signin` - User login (SuperTokens)
 
 ### Protected Endpoints
-- `GET /protected` - Example protected route (requires authentication)
 - `POST /auth/signout` - User logout (SuperTokens)
 
 ## Environment Variables
@@ -116,9 +115,32 @@ PostgreSQL is used as the primary database. SuperTokens automatically creates it
 
 ## Development
 
-The application supports hot reloading in development mode. When running locally with `npm run dev:local`, changes to TypeScript files will automatically restart the server.
+### Development Environment Setup
 
-## Docker Services Health Checks
+This application is configured for a modern development workflow with hot reloading and Docker containerization.
+
+#### Full Docker Development
+
+The entire application runs in Docker with hot reload enabled:
+
+1. **Start the development environment**:
+   ```bash
+   npm run dev
+   ```
+
+2. **Hot reload is automatically enabled** - changes to any file in the project will restart the server
+   - TypeScript files in `src/`
+   - Configuration files (`package.json`, `tsconfig.json`, etc.)
+   - Docker files
+
+3. **View logs**:
+   ```bash
+   docker compose logs -f express
+   ```
+
+4. **Access the application**:
+   - API: http://localhost:3000
+   - Auth endpoints: http://localhost:3000/auth/*
 
 All services include health checks:
 - **PostgreSQL**: Connection test

@@ -60,6 +60,9 @@ services:
       - supertokens
     ports:
       - '3000:3000'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=${PORT:-3000}
@@ -78,6 +81,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    command: npx tsx watch --watch . src/index.ts
+    working_dir: /usr/src/app
 
 volumes:
   postgres_data: null

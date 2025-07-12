@@ -1,12 +1,11 @@
-import express, { Request, Response } from 'express';
 import cors from 'cors';
+import express, { Request, Response } from 'express';
 import supertokens from 'supertokens-node';
-import { middleware, errorHandler, SessionRequest } from 'supertokens-node/framework/express';
-import { verifySession } from 'supertokens-node/recipe/session/framework/express';
-import Session from 'supertokens-node/recipe/session';
+import { errorHandler, middleware, SessionRequest } from 'supertokens-node/framework/express';
 import EmailPassword from 'supertokens-node/recipe/emailpassword';
+import Session from 'supertokens-node/recipe/session';
+import { verifySession } from 'supertokens-node/recipe/session/framework/express';
 
-// Minimal SuperTokens setup
 supertokens.init({
   framework: 'express',
   supertokens: {
@@ -22,7 +21,20 @@ supertokens.init({
   recipeList: [
     EmailPassword.init(),
     Session.init({
-      getTokenTransferMethod: () => "any"
+      getTokenTransferMethod: () => "any",
+      override: {
+        functions: (originalImplementation) => ({
+          ...originalImplementation,
+          createNewSession: async function (input) {
+            // Add custom claim to access token payload
+            input.accessTokenPayload = {
+              ...input.accessTokenPayload,
+              role: "admin" // or any dynamic value
+            };
+            return await originalImplementation.createNewSession(input);
+          }
+        })
+      }
     })
   ]
 });
@@ -46,7 +58,8 @@ app.get('/', (req: Request, res: Response) => {
 // Protected route
 app.get('/protected', verifySession(), (req: SessionRequest, res: Response) => {
   const session = req.session!;
-  console.log(req.session)
+  console.log('Session user ID:', session.getUserId());
+  console.log('Session custom claim:', session.getAccessTokenPayload().role);
   res.json({
     message: 'Protected content',
     userId: session.getUserId()
