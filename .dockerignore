@@ -1,0 +1,18 @@
+# Dependencies for development
+node_modules/
+npm-debug.log*
+
+# Build output (will be created during build)
+dist/
+
+# Environment variables
+.env*
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
