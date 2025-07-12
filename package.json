@@ -6,10 +6,14 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "docker-compose up --build",
+    "dev": "docker-compose --profile development up --build",
+    "prod": "docker-compose up --build",
     "dev:local": "ts-node src/index.ts",
+    "dev:services": "docker-compose --profile development up postgres redis supertokens",
     "watch": "ts-node --watch src/index.ts",
-    "stop": "docker-compose down"
+    "stop": "docker-compose down",
+    "clean": "docker-compose down -v --remove-orphans",
+    "logs": "docker-compose logs -f"
   },
   "keywords": [
     "express",
@@ -19,11 +23,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "supertokens-node": "^17.0.5",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3",
+    "redis": "^4.6.12"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.5",
+    "@types/cors": "^2.8.17",
+    "@types/pg": "^8.10.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }

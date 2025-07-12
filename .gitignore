@@ -3,31 +3,47 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package-lock.json
 
 # Build output
 dist/
 build/
 
-# Environment variables
+# Environment variables (IMPORTANT: Never commit these!)
 .env
+.env.*
+!.env.example
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Docker
+docker-compose.override.yml
 
 # IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
 # OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Logs
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Runtime data
 pids/
@@ -37,6 +53,34 @@ pids/
 
 # Coverage directory used by tools like istanbul
 coverage/
+.nyc_output/
 
 # TypeScript cache
 *.tsbuildinfo
+.tscache/
+
+# Secrets and sensitive files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+config/secrets.json
+cookies.txt
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.cache/
+
+# Testing
+.jest/
+test-results/
