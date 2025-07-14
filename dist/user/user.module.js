@@ -8,15 +8,25 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserModule = void 0;
 const common_1 = require("@nestjs/common");
-const user_service_1 = require("./user.service");
+const in_memory_user_repository_1 = require("./repositories/in-memory-user.repository");
 const user_controller_1 = require("./user.controller");
+const user_service_1 = require("./user.service");
 let UserModule = class UserModule {
 };
 exports.UserModule = UserModule;
 exports.UserModule = UserModule = __decorate([
     (0, common_1.Module)({
-        providers: [user_service_1.UserService],
-        controllers: [user_controller_1.UserController]
+        controllers: [user_controller_1.UserController],
+        providers: [
+            {
+                provide: 'IUserService',
+                useClass: user_service_1.UserService,
+            },
+            {
+                provide: 'IUserRepository',
+                useClass: in_memory_user_repository_1.InMemoryUserRepository,
+            },
+        ],
     })
 ], UserModule);
 //# sourceMappingURL=user.module.js.map
