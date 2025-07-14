@@ -2,18 +2,20 @@ version: '3.8'
 services:
 
   postgres:
+    container_name: postgres
     image: postgres:15
     restart: always
     environment:
       POSTGRES_USER: beaver
       POSTGRES_PASSWORD: beaver
-      POSTGRES_DB: beaver
+      POSTGRES_DB: beaver_core_db
     ports:
       - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   redis:
+    container_name: redis
     image: redis:7
     restart: always
     ports:
