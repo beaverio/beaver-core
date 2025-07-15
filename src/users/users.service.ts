@@ -1,9 +1,9 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { hash } from 'bcryptjs';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './entities/user.entity';
-import { IUserService } from './interfaces/user-service.interface';
 import { IUserRepository } from './interfaces/user-repository.interface';
-import { hash } from 'bcryptjs';
+import { IUserService } from './interfaces/user-service.interface';
 
 @Injectable()
 export class UsersService implements IUserService {
@@ -17,5 +17,15 @@ export class UsersService implements IUserService {
       ...dto,
       password: await hash(dto.password, 10),
     });
+  }
+
+  async getUser(query: Partial<User>): Promise<User> {
+    const user = await this.userRepository.findOne(query);
+
+    if (!user) {
+      throw new NotFoundException('User not found')
+    }
+
+    return user;
   }
 }

@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { redisConfig } from './config/redis.config';
 import { typeOrmConfig } from './config/typeorm.config';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { UsersModule } from './users/users.module';
       useFactory: typeOrmConfig,
     }),
     UsersModule,
+    AuthModule,
   ],
   providers: []
 })

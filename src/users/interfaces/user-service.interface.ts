@@ -3,4 +3,5 @@ import { User } from '../entities/user.entity';
 
 export interface IUserService {
   createUser(dto: CreateUserDto): Promise<User>;
+  getUser(query: Partial<User>): Promise<User>;
 }

@@ -17,7 +17,6 @@ import { UserRepository } from './repositories/user.repository';
       provide: 'IUserRepository',
       useClass: UserRepository,
     },
-    UserRepository,
   ],
   exports: ['IUserService'],
 })

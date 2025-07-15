@@ -15,4 +15,8 @@ export class UserRepository implements IUserRepository {
   async create(dto: CreateUserDto): Promise<User> {
     return this.repo.save(dto);
   }
+
+  async findOne(where: Partial<User>): Promise<User | null> {
+    return this.repo.findOne({ where });
+  }
 }
