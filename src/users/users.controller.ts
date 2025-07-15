@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Inject, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, ClassSerializerInterceptor, Controller, Get, Inject, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { JWTAuthGuard } from 'src/auth/gaurds/jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './entities/user.entity';
 import { IUserService } from './interfaces/user-service.interface';
-import { JWTAuthGuard } from 'src/auth/gaurds/jwt-auth.guard';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
+@UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
   constructor(
