@@ -9,7 +9,8 @@ import { ITokenPayload } from "../interfaces/token-payload-interface";
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    @Inject('IUserService') private readonly userService: IUserService,
+    @Inject('IUserService')
+    private readonly userService: IUserService,
     private readonly configService: ConfigService
   ) {
     super({

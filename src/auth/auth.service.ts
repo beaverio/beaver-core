@@ -5,12 +5,14 @@ import { compare } from 'bcryptjs';
 import { Response } from 'express';
 import { User } from 'src/users/entities/user.entity';
 import { IUserService } from 'src/users/interfaces/user-service.interface';
+import { IAuthService } from './interfaces/auth-service.interface';
 import { ITokenPayload } from './interfaces/token-payload-interface';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements IAuthService {
   constructor(
-    @Inject('IUserService') private readonly userService: IUserService,
+    @Inject('IUserService')
+    private readonly userService: IUserService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) { }

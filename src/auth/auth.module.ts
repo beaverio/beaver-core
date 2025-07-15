@@ -11,6 +11,14 @@ import { JWTRefreshStrategy } from './strategies/refresh.strategy';
 @Module({
   imports: [UsersModule, PassportModule, JwtModule],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, JWTRefreshStrategy]
+  providers: [
+    {
+      provide: 'IAuthService',
+      useClass: AuthService,
+    },
+    LocalStrategy,
+    JwtStrategy,
+    JWTRefreshStrategy,
+  ],
 })
 export class AuthModule { }

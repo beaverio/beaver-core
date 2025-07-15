@@ -4,12 +4,13 @@ import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
 import { ITokenPayload } from "../interfaces/token-payload-interface";
 import { Request } from "express";
-import { AuthService } from "../auth.service";
+import { IAuthService } from "../interfaces/auth-service.interface";
 
 @Injectable()
 export class JWTRefreshStrategy extends PassportStrategy(Strategy, 'refresh') {
   constructor(
-    private readonly authService: AuthService,
+    @Inject('IAuthService')
+    private readonly authService: IAuthService,
     private readonly configService: ConfigService
   ) {
     super({

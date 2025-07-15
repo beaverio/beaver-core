@@ -1,15 +1,16 @@
-import { Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Controller, Inject, Post, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { User } from 'src/users/entities/user.entity';
-import { AuthService } from './auth.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { LocalAuthGuard } from './gaurds/local-auth.guard';
 import { RefreshAuthGuard } from './gaurds/refresh-auth.guard';
+import { IAuthService } from './interfaces/auth-service.interface';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly authService: AuthService,
+    @Inject('IAuthService')
+    private readonly authService: IAuthService,
   ) { }
 
   @UseGuards(LocalAuthGuard)
