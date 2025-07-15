@@ -16,6 +16,10 @@ export class UserRepository implements IUserRepository {
     return this.repo.save(dto);
   }
 
+  async findAll(): Promise<User[]> {
+    return this.repo.find()
+  }
+
   async findOne(where: Partial<User>): Promise<User | null> {
     return this.repo.findOne({ where });
   }

@@ -19,6 +19,10 @@ export class UsersService implements IUserService {
     });
   }
 
+  async getUsers(): Promise<User[]> {
+    return await this.userRepository.findAll()
+  }
+
   async getUser(query: Partial<User>): Promise<User> {
     const user = await this.userRepository.findOne(query);
 
