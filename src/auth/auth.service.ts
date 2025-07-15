@@ -28,11 +28,30 @@ export class AuthService {
     }
   }
 
+  async verifyRefreshToken(refreshToken: string, userId: string) {
+    try {
+      const user = await this.userService.getUser({ id: userId });
+      const authenticated = compare(refreshToken, user.refreshToken as string);
+      if (!authenticated) {
+        throw new UnauthorizedException()
+      }
+      return user;
+    } catch (error) {
+      throw new UnauthorizedException('Refresh token is invalid');
+    }
+  }
+
   async login(user: User, response: Response) {
-    const expirationTime = new Date()
-    expirationTime.setMilliseconds(
-      expirationTime.getTime() +
-      parseInt(this.configService.getOrThrow<string>('JWT_EXPIRATION'))
+    const expirationAccessToken = new Date()
+    expirationAccessToken.setSeconds(
+      expirationAccessToken.getSeconds() +
+      parseInt(this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION'))
+    )
+
+    const expirationRefreshToken = new Date()
+    expirationRefreshToken.setSeconds(
+      expirationRefreshToken.getSeconds() +
+      parseInt(this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION'))
     )
 
     const payload: ITokenPayload = {
@@ -40,14 +59,29 @@ export class AuthService {
     }
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: `${this.configService.getOrThrow<string>('JWT_EXPIRATION')}ms`,
-      secret: this.configService.getOrThrow<string>('JWT_SECRET'),
+      expiresIn: parseInt(this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION')),
+      secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      expiresIn: parseInt(this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION')),
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+    });
+
+    await this.userService.updateUser(user.id, {
+      refreshToken,
     });
 
     response.cookie('authentication', accessToken, {
       httpOnly: true,
       secure: this.configService.get<string>('NODE_ENV') === 'production',
-      expires: expirationTime,
+      expires: expirationAccessToken,
+    });
+
+    response.cookie('refresh', refreshToken, {
+      httpOnly: true,
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
+      expires: expirationRefreshToken,
     });
   }
 }
