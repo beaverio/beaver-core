@@ -4,6 +4,6 @@ import { ConfigService } from "@nestjs/config";
 export const redisConfig = (config: ConfigService) => ({
   ttl: 60000,
   stores: [
-    createKeyv(config.get<string>('REDIS_URL')!),
+    createKeyv(config.getOrThrow<string>('REDIS_URL')!),
   ],
 })
