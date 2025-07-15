@@ -4,7 +4,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { redisConfig } from './config/redis.config';
 import { typeOrmConfig } from './config/typeorm.config';
-import { UserModule } from './users/user.module';
 
 @Module({
   imports: [
@@ -20,7 +19,6 @@ import { UserModule } from './users/user.module';
       inject: [ConfigService],
       useFactory: typeOrmConfig,
     }),
-    UserModule,
   ],
   providers: []
 })
