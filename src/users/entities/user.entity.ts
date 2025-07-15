@@ -3,8 +3,8 @@ import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
 @Entity('users')
 @Unique(['email'])
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ type: 'varchar', length: 255 })
   email: string;
