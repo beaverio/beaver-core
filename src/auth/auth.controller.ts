@@ -24,7 +24,7 @@ export class AuthController {
   constructor(
     @Inject('IAuthService')
     private readonly authService: IAuthService,
-  ) { }
+  ) {}
 
   @Post('signup')
   async signUp(
@@ -63,7 +63,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const refreshToken = req.cookies?.refresh;
+    const refreshToken = req.cookies?.refresh as string | undefined;
     if (refreshToken) {
       await this.authService.logout(user.id, refreshToken);
     }

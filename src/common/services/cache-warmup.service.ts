@@ -8,7 +8,7 @@ export class CacheWarmupService implements OnModuleInit {
   constructor(
     @Inject('ICacheService')
     private readonly cacheService: ICacheService,
-  ) { }
+  ) {}
 
   async onModuleInit() {
     // Only warm cache in production or when explicitly enabled
@@ -25,6 +25,9 @@ export class CacheWarmupService implements OnModuleInit {
     this.logger.log('Starting cache warmup...');
 
     try {
+      // Perform a basic cache health check to ensure cache is working
+      await this.cacheService.isHealthy();
+
       // Example: Pre-load recently active users or critical user data
       // In a real application, you might want to load:
       // - Most frequently accessed users

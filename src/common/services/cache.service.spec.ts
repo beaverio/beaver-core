@@ -104,13 +104,13 @@ describe('CacheService', () => {
     it('should return true when cache is healthy', async () => {
       let storedValue: string;
 
-      cacheManager.set.mockImplementation(async (key, value) => {
+      cacheManager.set.mockImplementation((_key, value) => {
         storedValue = value as string;
-        return value;
+        return Promise.resolve(value);
       });
 
-      cacheManager.get.mockImplementation(async (key) => {
-        return storedValue;
+      cacheManager.get.mockImplementation(() => {
+        return Promise.resolve(storedValue);
       });
 
       cacheManager.del.mockResolvedValue(true);

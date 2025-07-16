@@ -19,20 +19,20 @@ export class BaseUserDto extends BaseDto {
 export class CreateUserDto extends PickType(BaseUserDto, [
   'email',
   'password',
-] as const) { }
+] as const) {}
 
 // Update DTO - automatically excludes id, createdAt, updatedAt, and refreshToken
 export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, [
   'refreshToken',
-]) { }
+]) {}
 
 // Internal DTO for system updates - automatically excludes id, createdAt, updatedAt
-export class InternalUpdateUserDto extends CreateUpdateDto(BaseUserDto, []) { }
+export class InternalUpdateUserDto extends CreateUpdateDto(BaseUserDto, []) {}
 
 // Query Params DTO - id and email are optional for filtering
 export class QueryParamsUserDto extends PartialType(
   PickType(BaseUserDto, ['id', 'email'] as const),
-) { }
+) {}
 
 // Response DTO - only safe fields (no password or refreshToken)
 export class UserResponseDto extends PickType(BaseUserDto, [
@@ -45,12 +45,14 @@ export class UserResponseDto extends PickType(BaseUserDto, [
     const dto = new UserResponseDto();
     dto.id = user.id;
     dto.email = user.email;
-    dto.createdAt = user.createdAt instanceof Date
-      ? user.createdAt.toISOString()
-      : user.createdAt;
-    dto.updatedAt = user.updatedAt instanceof Date
-      ? user.updatedAt.toISOString()
-      : user.updatedAt;
+    dto.createdAt =
+      user.createdAt instanceof Date
+        ? user.createdAt.toISOString()
+        : user.createdAt;
+    dto.updatedAt =
+      user.updatedAt instanceof Date
+        ? user.updatedAt.toISOString()
+        : user.updatedAt;
     return dto;
   }
 
