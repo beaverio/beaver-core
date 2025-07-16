@@ -16,7 +16,9 @@ class TestEntityDto extends BaseDto {
 }
 
 // Test Update DTO using the utility
-class TestUpdateDto extends CreateUpdateDto(TestEntityDto, ['sensitiveField']) {}
+class TestUpdateDto extends CreateUpdateDto(TestEntityDto, [
+  'sensitiveField',
+]) {}
 
 describe('BaseDto and CreateUpdateDto Utility', () => {
   describe('BaseDto', () => {
@@ -32,7 +34,7 @@ describe('BaseDto and CreateUpdateDto Utility', () => {
     it('should automatically exclude id, createdAt, updatedAt from validation', async () => {
       // Test that the utility properly creates a type that excludes the specified fields
       // The real test is whether the DTO validates correctly and doesn't include excluded fields in its schema
-      
+
       const validData = {
         name: 'Test Name',
         description: 'Test Description',
@@ -41,7 +43,7 @@ describe('BaseDto and CreateUpdateDto Utility', () => {
       const dto = plainToClass(TestUpdateDto, validData);
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
-      
+
       // Test that the UpdateDto doesn't validate excluded fields
       // If we try to validate with invalid data for excluded fields, they should be ignored
       const dataWithExcludedFields = {
@@ -55,7 +57,7 @@ describe('BaseDto and CreateUpdateDto Utility', () => {
 
       const dtoWithExtra = plainToClass(TestUpdateDto, dataWithExcludedFields);
       const errorsWithExtra = await validate(dtoWithExtra);
-      
+
       // Should still be valid because excluded fields are not validated
       expect(errorsWithExtra).toHaveLength(0);
     });
