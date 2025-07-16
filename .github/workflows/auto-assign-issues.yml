@@ -1,0 +1,29 @@
+name: Auto-assign Issues
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  auto-assign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-assign issue to creator or default assignee
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const creator = issue.user.login;
+            
+            const defaultAssignee = 'ConnorDBurge';
+            
+            const assignee = creator === defaultAssignee ? creator : defaultAssignee;
+            
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              assignees: [assignee]
+            });
+            
+            console.log(`Auto-assigned issue #${issue.number} to ${assignee}`);

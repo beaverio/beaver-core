@@ -3,7 +3,7 @@ name: Feature Request
 about: Suggest a new feature or enhancement
 title: '[FEATURE] '
 labels: ['feature', 'enhancement']
-assignees: ''
+assignees: 'ConnorDBurge'
 ---
 
 ## 🚀 Feature Description

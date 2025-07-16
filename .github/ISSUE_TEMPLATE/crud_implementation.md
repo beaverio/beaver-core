@@ -3,7 +3,7 @@ name: CRUD Implementation
 about: Template for implementing CRUD operations
 title: '[CRUD] Implement CRUD for [Entity Name]'
 labels: ['feature', 'crud']
-assignees: ''
+assignees: 'ConnorDBurge'
 ---
 
 ## 📊 Entity: [Entity Name]

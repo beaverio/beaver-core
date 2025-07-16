@@ -3,7 +3,7 @@ name: Tech Debt / Refactor
 about: Address technical debt or refactor existing code
 title: '[TECH-DEBT] '
 labels: ['tech-debt', 'refactor']
-assignees: ''
+assignees: 'ConnorDBurge'
 ---
 
 ## 🔧 Technical Debt Description
