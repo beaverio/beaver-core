@@ -10,7 +10,7 @@ import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     CacheModule.registerAsync({
       isGlobal: true,
@@ -24,6 +24,6 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     AuthModule,
   ],
-  providers: []
+  providers: [],
 })
-export class AppModule { }
+export class AppModule {}

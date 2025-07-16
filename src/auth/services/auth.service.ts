@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcryptjs';
@@ -16,14 +21,14 @@ export class AuthService implements IAuthService {
     private readonly userService: IUserService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   async verifyUser(email: string, password: string): Promise<User> {
     try {
       const user = await this.userService.getUser({ email });
       const authenticated = await compare(password, user.password);
       if (!authenticated) {
-        throw new UnauthorizedException()
+        throw new UnauthorizedException();
       }
       return user;
     } catch (error) {
@@ -36,7 +41,7 @@ export class AuthService implements IAuthService {
       const user = await this.userService.getUser({ id: userId });
       const authenticated = compare(refreshToken, user.refreshToken as string);
       if (!authenticated) {
-        throw new UnauthorizedException()
+        throw new UnauthorizedException();
       }
       return user;
     } catch (error) {
@@ -45,7 +50,9 @@ export class AuthService implements IAuthService {
   }
 
   async signup(dto: CreateUserDto): Promise<User> {
-    const [existingUser] = await this.userService.getUsers({ email: dto.email });
+    const [existingUser] = await this.userService.getUsers({
+      email: dto.email,
+    });
     if (existingUser) {
       throw new BadRequestException('Email already exists');
     }
@@ -53,29 +60,37 @@ export class AuthService implements IAuthService {
   }
 
   async signin(user: User, response: Response) {
-    const expirationAccessToken = new Date()
+    const expirationAccessToken = new Date();
     expirationAccessToken.setSeconds(
       expirationAccessToken.getSeconds() +
-      parseInt(this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION'))
-    )
+        parseInt(
+          this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION'),
+        ),
+    );
 
-    const expirationRefreshToken = new Date()
+    const expirationRefreshToken = new Date();
     expirationRefreshToken.setSeconds(
       expirationRefreshToken.getSeconds() +
-      parseInt(this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION'))
-    )
+        parseInt(
+          this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION'),
+        ),
+    );
 
     const payload: ITokenPayload = {
       sub: user.id,
-    }
+    };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: parseInt(this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION')),
+      expiresIn: parseInt(
+        this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION'),
+      ),
       secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      expiresIn: parseInt(this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION')),
+      expiresIn: parseInt(
+        this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION'),
+      ),
       secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
     });
 

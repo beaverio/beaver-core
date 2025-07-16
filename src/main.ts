@@ -6,17 +6,18 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+    }),
+  );
 
   app.setGlobalPrefix('v1', {
-    exclude: [{ path: '/auth/*path', method: RequestMethod.ALL }]
+    exclude: [{ path: '/auth/*path', method: RequestMethod.ALL }],
   });
 
-  app.use(cookieParser())
+  app.use(cookieParser());
 
   await app.listen(process.env.PORT ?? 3000);
-
 }
-bootstrap()
+bootstrap();

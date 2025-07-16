@@ -25,6 +25,44 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## DTO Pattern
+
+This project uses a base DTO pattern with NestJS mapped-types to reduce maintenance overhead and eliminate duplicate validation logic:
+
+### Base DTO Approach
+- **BaseUserDto**: Contains all possible user fields with their validation decorators
+- **Derived DTOs**: Use `PickType` and `PartialType` from `@nestjs/mapped-types` for specific use cases
+- **Type Safety**: Maintains full TypeScript type safety and validation
+- **DRY Principle**: Eliminates duplicate validation logic across DTOs
+
+### Example Implementation
+```typescript
+// Base DTO with all fields and validations
+export class BaseUserDto {
+  @IsUUID()
+  id: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsStrongPassword()
+  password: string;
+
+  @IsString()
+  refreshToken: string;
+}
+
+// Derived DTOs using mapped types
+export class CreateUserDto extends PickType(BaseUserDto, ['email', 'password'] as const) {}
+export class UpdateUserDto extends PartialType(PickType(BaseUserDto, ['email', 'password', 'refreshToken'] as const)) {}
+```
+
+### Benefits
+- **Maintainability**: Adding new fields only requires updating the base DTO
+- **Consistency**: All DTOs automatically inherit the same validation rules
+- **Type Safety**: Full TypeScript support with IntelliSense
+- **Scalability**: Easy to extend for new entities and use cases
+
 ## Project setup
 
 ```bash

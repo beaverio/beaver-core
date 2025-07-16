@@ -1,43 +1,43 @@
-import { IsEmail, IsOptional, IsString, IsStrongPassword, IsUUID } from 'class-validator';
+import { IsEmail, IsString, IsStrongPassword, IsUUID } from 'class-validator';
+import { PickType, PartialType } from '@nestjs/mapped-types';
 import { User } from '../entities/user.entity';
 
-export class CreateUserDto {
+// Base DTO containing all possible user fields with their validations
+export class BaseUserDto {
+  @IsUUID()
+  id: string;
+
   @IsEmail()
   email: string;
 
   @IsStrongPassword()
   password: string;
-}
 
-export class UpdateUserDto {
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsStrongPassword()
-  password?: string;
-
-  @IsOptional()
   @IsString()
-  refreshToken?: string;
+  refreshToken: string;
 }
 
-export class GetUsersQueryDto {
-  @IsOptional()
-  @IsUUID()
-  id?: string;
+// Create DTO - only requires email and password
+export class CreateUserDto extends PickType(BaseUserDto, [
+  'email',
+  'password',
+] as const) {}
 
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-}
+// Update DTO - all fields optional except id
+export class UpdateUserDto extends PartialType(
+  PickType(BaseUserDto, ['email', 'password', 'refreshToken'] as const),
+) {}
 
-// Response DTOs
-export class UserResponseDto {
-  id: string;
-  email: string;
+// Query DTO - id and email are optional for filtering
+export class GetUsersQueryDto extends PartialType(
+  PickType(BaseUserDto, ['id', 'email'] as const),
+) {}
 
+// Response DTO - only safe fields (no password or refreshToken)
+export class UserResponseDto extends PickType(BaseUserDto, [
+  'id',
+  'email',
+] as const) {
   static fromEntity(user: User): UserResponseDto {
     const dto = new UserResponseDto();
     dto.id = user.id;
@@ -46,6 +46,6 @@ export class UserResponseDto {
   }
 
   static fromEntities(users: User[]): UserResponseDto[] {
-    return users.map(user => this.fromEntity(user));
+    return users.map((user) => this.fromEntity(user));
   }
 }
