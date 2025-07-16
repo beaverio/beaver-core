@@ -3,8 +3,8 @@ import { hash } from 'bcryptjs';
 import {
   CreateUserDto,
   GetUsersQueryDto,
-  UpdateUserDto,
   InternalUpdateUserDto,
+  UpdateUserDto,
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
@@ -15,7 +15,7 @@ export class UsersService implements IUserService {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
-  ) {}
+  ) { }
 
   async createUser(dto: CreateUserDto): Promise<User> {
     return this.userRepository.create({
@@ -38,6 +38,7 @@ export class UsersService implements IUserService {
     return user;
   }
 
+  // For user updates through the controller
   async updateUser(id: string, dto: UpdateUserDto): Promise<User> {
     const updateData = { ...dto };
 
@@ -48,6 +49,7 @@ export class UsersService implements IUserService {
     return await this.userRepository.update(id, updateData);
   }
 
+  // For internal updates we don't want to expose through the controller
   async updateUserInternal(id: string, dto: InternalUpdateUserDto): Promise<User> {
     const updateData: any = { ...dto };
 

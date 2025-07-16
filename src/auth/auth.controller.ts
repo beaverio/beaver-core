@@ -15,7 +15,7 @@ export class AuthController {
   constructor(
     @Inject('IAuthService')
     private readonly authService: IAuthService,
-  ) {}
+  ) { }
 
   @Post('signup')
   async signUp(
@@ -27,6 +27,7 @@ export class AuthController {
     return UserResponseDto.fromEntity(user);
   }
 
+  // Attaches the user to the request context, available using the @CurrentUser() decorator
   @UseGuards(LocalAuthGuard)
   @Post('signin')
   async signin(
@@ -36,6 +37,7 @@ export class AuthController {
     await this.authService.signin(user, res);
   }
 
+  // Attaches the user to the request context, available using the @CurrentUser() decorator
   @UseGuards(RefreshAuthGuard)
   @Post('refresh')
   async refresh(

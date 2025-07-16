@@ -5,14 +5,12 @@
  * Follow these patterns when creating DTOs for new resources.
  */
 
-import { IsEmail, IsString, IsUUID, IsOptional, IsDateString } from 'class-validator';
-import { PickType, PartialType, OmitType } from '@nestjs/mapped-types';
+import { OmitType, PartialType, PickType } from '@nestjs/mapped-types';
+import { IsDateString, IsOptional, IsString, IsUUID } from 'class-validator';
+import { BaseDto } from './base.dto';
 
 // Example: Base DTO for a hypothetical "Post" entity
-export class BasePostDto {
-  @IsUUID()
-  id: string;
-
+export class BasePostDto extends BaseDto {
   @IsString()
   title: string;
 
@@ -21,30 +19,24 @@ export class BasePostDto {
 
   @IsUUID()
   authorId: string;
-
-  @IsDateString()
-  createdAt: string;
-
-  @IsDateString()
-  updatedAt: string;
 }
 
 // Create DTO - only requires title, content, and authorId
 export class CreatePostDto extends PickType(BasePostDto, [
   'title',
-  'content', 
+  'content',
   'authorId'
-] as const) {}
+] as const) { }
 
 // Update DTO - title and content are optional
 export class UpdatePostDto extends PartialType(
   PickType(BasePostDto, ['title', 'content'] as const)
-) {}
+) { }
 
 // Query DTO - all fields optional for filtering
 export class GetPostsQueryDto extends PartialType(
   PickType(BasePostDto, ['authorId', 'title'] as const)
-) {}
+) { }
 
 // Response DTO - includes all fields except internal timestamps can be controlled
 export class PostResponseDto extends OmitType(BasePostDto, ['updatedAt'] as const) {

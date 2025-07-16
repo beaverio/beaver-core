@@ -3,14 +3,12 @@ import {
   Controller,
   Get,
   Inject,
-  Param,
-  ParseUUIDPipe,
   Patch,
   Query,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JWTAuthGuard } from 'src/auth/gaurds/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import {
   GetUsersQueryDto,
   UpdateUserDto,
@@ -25,7 +23,7 @@ export class UsersController {
   constructor(
     @Inject('IUserService')
     private readonly usersService: IUserService,
-  ) {}
+  ) { }
 
   @Get()
   async getUsers(@Query() query: GetUsersQueryDto): Promise<UserResponseDto[]> {
