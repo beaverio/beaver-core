@@ -5,5 +5,5 @@ export const typeOrmConfig = (config: ConfigService): TypeOrmModuleOptions => ({
   type: 'postgres',
   url: config.getOrThrow<string>('DATABASE_URL'),
   autoLoadEntities: true,
-  synchronize: false
+  synchronize: false,
 });
