@@ -31,7 +31,7 @@ export class AuthService implements IAuthService {
         throw new UnauthorizedException();
       }
       return user;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Credentials are invalid');
     }
   }
@@ -39,12 +39,15 @@ export class AuthService implements IAuthService {
   async verifyRefreshToken(refreshToken: string, userId: string) {
     try {
       const user = await this.userService.getUser({ id: userId });
-      const authenticated = compare(refreshToken, user.refreshToken as string);
+      const authenticated = await compare(
+        refreshToken,
+        user.refreshToken as string,
+      );
       if (!authenticated) {
         throw new UnauthorizedException();
       }
       return user;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Refresh token is invalid');
     }
   }

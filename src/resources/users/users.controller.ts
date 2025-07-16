@@ -32,7 +32,7 @@ export class UsersController {
   }
 
   @Get('self')
-  async getSelf(@CurrentUser() user: User): Promise<UserResponseDto> {
+  getSelf(@CurrentUser() user: User): UserResponseDto {
     return UserResponseDto.fromEntity(user);
   }
 

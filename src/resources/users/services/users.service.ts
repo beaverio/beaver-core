@@ -54,7 +54,7 @@ export class UsersService implements IUserService {
     id: string,
     dto: InternalUpdateUserDto,
   ): Promise<User> {
-    const updateData: any = { ...dto };
+    const updateData: Partial<User> = { ...dto };
 
     if (dto.password) {
       updateData.password = await hash(dto.password, 10);
@@ -64,6 +64,6 @@ export class UsersService implements IUserService {
       updateData.refreshToken = await hash(dto.refreshToken, 10);
     }
 
-    return await this.userRepository.update(id, updateData);
+    return await this.userRepository.update(id, updateData as UpdateUserDto);
   }
 }
