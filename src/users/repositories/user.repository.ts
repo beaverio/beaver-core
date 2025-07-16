@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { GetUsersQueryDto } from '../dto/query-params-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
@@ -17,11 +18,11 @@ export class UserRepository implements IUserRepository {
     return this.repo.save(dto);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.repo.find()
+  async findAll(where: GetUsersQueryDto): Promise<User[]> {
+    return this.repo.find({ where })
   }
 
-  async findOne(where: Partial<User>): Promise<User | null> {
+  async findOne(where: GetUsersQueryDto): Promise<User | null> {
     return this.repo.findOne({ where });
   }
 

@@ -1,8 +1,9 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcryptjs';
 import { Response } from 'express';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { User } from 'src/users/entities/user.entity';
 import { IUserService } from 'src/users/interfaces/user-service.interface';
 import { IAuthService } from './interfaces/auth-service.interface';
@@ -43,7 +44,15 @@ export class AuthService implements IAuthService {
     }
   }
 
-  async login(user: User, response: Response) {
+  async signup(dto: CreateUserDto): Promise<User> {
+    const [existingUser] = await this.userService.getUsers({ email: dto.email });
+    if (existingUser) {
+      throw new BadRequestException('Email already exists');
+    }
+    return this.userService.createUser(dto);
+  }
+
+  async signin(user: User, response: Response) {
     const expirationAccessToken = new Date()
     expirationAccessToken.setSeconds(
       expirationAccessToken.getSeconds() +

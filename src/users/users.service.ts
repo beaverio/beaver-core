@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { IUserRepository } from './interfaces/user-repository.interface';
 import { IUserService } from './interfaces/user-service.interface';
+import { GetUsersQueryDto } from './dto/query-params-user.dto';
 
 @Injectable()
 export class UsersService implements IUserService {
@@ -20,11 +21,11 @@ export class UsersService implements IUserService {
     });
   }
 
-  async getUsers(): Promise<User[]> {
-    return await this.userRepository.findAll()
+  async getUsers(query: GetUsersQueryDto): Promise<User[]> {
+    return await this.userRepository.findAll(query)
   }
 
-  async getUser(query: Partial<User>): Promise<User> {
+  async getUser(query: GetUsersQueryDto): Promise<User> {
     const user = await this.userRepository.findOne(query);
 
     if (!user) {
