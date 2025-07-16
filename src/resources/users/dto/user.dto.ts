@@ -1,6 +1,6 @@
 import { IsEmail, IsString, IsStrongPassword } from 'class-validator';
-import { PickType, PartialType, OmitType } from '@nestjs/mapped-types';
-import { BaseDto } from '../../../common/dto/base.dto';
+import { PickType, PartialType } from '@nestjs/mapped-types';
+import { BaseDto, CreateUpdateDto } from '../../../common/dto/base.dto';
 import { User } from '../entities/user.entity';
 
 // Base DTO containing all possible user fields with their validations
@@ -21,20 +21,13 @@ export class CreateUserDto extends PickType(BaseUserDto, [
   'password',
 ] as const) {}
 
-// Update DTO - exclude fields users shouldn't be able to update
-export class UpdateUserDto extends PartialType(
-  OmitType(BaseUserDto, [
-    'id',
-    'createdAt',
-    'updatedAt',
-    'refreshToken',
-  ] as const),
-) {}
+// Update DTO - automatically excludes id, createdAt, updatedAt, and refreshToken
+export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, [
+  'refreshToken',
+]) {}
 
-// Internal DTO for system updates (allows refreshToken updates for auth service)
-export class InternalUpdateUserDto extends PartialType(
-  OmitType(BaseUserDto, ['id', 'createdAt', 'updatedAt'] as const),
-) {}
+// Internal DTO for system updates - automatically excludes id, createdAt, updatedAt
+export class InternalUpdateUserDto extends CreateUpdateDto(BaseUserDto, []) {}
 
 // Query Params DTO - id and email are optional for filtering
 export class GetUsersQueryDto extends PartialType(

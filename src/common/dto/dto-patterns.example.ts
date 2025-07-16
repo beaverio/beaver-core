@@ -6,8 +6,8 @@
  */
 
 import { OmitType, PartialType, PickType } from '@nestjs/mapped-types';
-import { IsDateString, IsOptional, IsString, IsUUID } from 'class-validator';
-import { BaseDto } from './base.dto';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { BaseDto, CreateUpdateDto } from './base.dto';
 
 // Example: Base DTO for a hypothetical "Post" entity
 export class BasePostDto extends BaseDto {
@@ -28,10 +28,9 @@ export class CreatePostDto extends PickType(BasePostDto, [
   'authorId',
 ] as const) {}
 
-// Update DTO - title and content are optional
-export class UpdatePostDto extends PartialType(
-  PickType(BasePostDto, ['title', 'content'] as const),
-) {}
+// Update DTO - automatically excludes id, createdAt, updatedAt
+// Only allows updating title and content (excludes authorId for security)
+export class UpdatePostDto extends CreateUpdateDto(BasePostDto, ['authorId']) {}
 
 // Query DTO - all fields optional for filtering
 export class GetPostsQueryDto extends PartialType(
@@ -47,13 +46,13 @@ export class PostResponseDto extends OmitType(BasePostDto, [
   @IsOptional()
   authorEmail?: string;
 
-  static fromEntity(post: any, authorEmail?: string): PostResponseDto {
+  static fromEntity(post: PostEntity, authorEmail?: string): PostResponseDto {
     const dto = new PostResponseDto();
     dto.id = post.id;
     dto.title = post.title;
     dto.content = post.content;
     dto.authorId = post.authorId;
-    dto.createdAt = post.createdAt;
+    dto.createdAt = post.createdAt.toISOString();
     if (authorEmail) {
       dto.authorEmail = authorEmail;
     }
@@ -61,7 +60,7 @@ export class PostResponseDto extends OmitType(BasePostDto, [
   }
 
   static fromEntities(
-    posts: any[],
+    posts: PostEntity[],
     getAuthorEmail?: (authorId: string) => string,
   ): PostResponseDto[] {
     return posts.map((post) => {
@@ -71,6 +70,16 @@ export class PostResponseDto extends OmitType(BasePostDto, [
       return this.fromEntity(post, authorEmail);
     });
   }
+}
+
+// Example entity interface for type safety
+interface PostEntity {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -83,21 +92,27 @@ export class PostResponseDto extends OmitType(BasePostDto, [
  *
  * 2. DERIVED DTO PATTERNS:
  *    - CreateDto: Use PickType to select only required fields for creation
- *    - UpdateDto: Use PartialType(PickType(...)) for optional update fields
+ *    - UpdateDto: Use CreateUpdateDto utility to automatically exclude base fields
  *    - QueryDto: Use PartialType(PickType(...)) for optional filter fields
  *    - ResponseDto: Use PickType or OmitType to control exposed fields
  *
- * 3. STATIC METHODS:
+ * 3. AUTOMATIC FIELD EXCLUSION:
+ *    - CreateUpdateDto automatically omits: id, createdAt, updatedAt
+ *    - Pass additional fields to exclude as second parameter
+ *    - Example: CreateUpdateDto(BaseUserDto, ['refreshToken'])
+ *    - Ensures consistency across all update DTOs
+ *
+ * 4. STATIC METHODS:
  *    - Implement fromEntity() for single entity transformation
  *    - Implement fromEntities() for array transformation
  *    - Add business logic in transformation methods if needed
  *
- * 4. VALIDATION INHERITANCE:
+ * 5. VALIDATION INHERITANCE:
  *    - All validation decorators are automatically inherited
  *    - No need to duplicate @IsEmail, @IsUUID, etc.
  *    - Mapped types preserve all metadata and decorators
  *
- * 5. TYPE SAFETY:
+ * 6. TYPE SAFETY:
  *    - Use 'as const' with field arrays for better type inference
  *    - TypeScript will catch errors if referenced fields don't exist
  *    - IntelliSense works perfectly with this pattern

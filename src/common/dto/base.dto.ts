@@ -1,4 +1,5 @@
 import { IsUUID, IsDateString } from 'class-validator';
+import { PartialType, OmitType } from '@nestjs/mapped-types';
 
 /**
  * Base DTO containing common fields for all DTOs
@@ -17,3 +18,31 @@ export abstract class BaseDto {
   @IsDateString()
   updatedAt: string;
 }
+
+/**
+ * Utility type for creating update DTOs that automatically exclude
+ * fields that should never be updatable: id, createdAt, updatedAt
+ *
+ * Usage:
+ * export class UpdateEntityDto extends CreateUpdateDto(BaseEntityDto, ['sensitiveField']) {}
+ *
+ * @param BaseClass - The base DTO class
+ * @param additionalOmitFields - Additional fields to omit beyond the base ones
+ */
+export function CreateUpdateDto<T extends BaseDto, K extends keyof T>(
+  BaseClass: new () => T,
+  additionalOmitFields: readonly K[] = [] as readonly K[],
+) {
+  const fieldsToOmit = [
+    'id',
+    'createdAt',
+    'updatedAt',
+    ...additionalOmitFields,
+  ] as const;
+  return PartialType(OmitType(BaseClass, fieldsToOmit));
+}
+
+/**
+ * Type alias for the base fields that should be omitted from update DTOs
+ */
+export type BaseOmitFields = 'id' | 'createdAt' | 'updatedAt';

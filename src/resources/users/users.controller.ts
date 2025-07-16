@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { JWTAuthGuard } from 'src/auth/gaurds/jwt-auth.guard';
+import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import {
   GetUsersQueryDto,

@@ -49,12 +49,6 @@ describe('DTO Behavior Tests', () => {
       expect('refreshToken' in updateDto).toBe(false);
 
       // Ensure UpdateUserDto doesn't inherit refreshToken validation
-      const dtoInstance = plainToClass(UpdateUserDto, {
-        email: 'test@example.com',
-        password: 'NewPass123!',
-        refreshToken: 'should-not-be-accepted',
-      });
-
       // refreshToken should not be part of the DTO structure
       // Check if refreshToken property exists in the DTO class definition
       const descriptor = Object.getOwnPropertyDescriptor(

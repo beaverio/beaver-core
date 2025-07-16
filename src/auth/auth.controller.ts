@@ -6,8 +6,8 @@ import {
 } from 'src/resources/users/dto/user.dto';
 import { User } from 'src/resources/users/entities/user.entity';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { LocalAuthGuard } from './gaurds/local-auth.guard';
-import { RefreshAuthGuard } from './gaurds/refresh-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { RefreshAuthGuard } from './guards/refresh-auth.guard';
 import { IAuthService } from './interfaces/auth-service.interface';
 
 @Controller('auth')
