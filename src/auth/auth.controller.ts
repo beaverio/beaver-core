@@ -24,7 +24,7 @@ export class AuthController {
   constructor(
     @Inject('IAuthService')
     private readonly authService: IAuthService,
-  ) {}
+  ) { }
 
   @Post('signup')
   async signUp(
@@ -63,10 +63,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const refreshToken = req.cookies?.refresh;
     if (refreshToken) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       await this.authService.logout(user.id, refreshToken);
     }
 

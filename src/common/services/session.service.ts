@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { ICacheService } from '../interfaces/cache-service.interface';
 import { ISessionService } from '../interfaces/session-service.interface';
@@ -10,7 +10,10 @@ export class SessionService implements ISessionService {
   private readonly USER_SESSIONS_PREFIX = 'user_sessions:';
   private readonly DEFAULT_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-  constructor(private readonly cacheService: ICacheService) {}
+  constructor(
+    @Inject('ICacheService')
+    private readonly cacheService: ICacheService,
+  ) { }
 
   async storeSession(
     userId: string,

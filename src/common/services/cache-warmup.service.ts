@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { IUserService } from '../../resources/users/interfaces/user-service.interface';
 import { ICacheService } from '../interfaces/cache-service.interface';
 
 @Injectable()
@@ -9,9 +8,7 @@ export class CacheWarmupService implements OnModuleInit {
   constructor(
     @Inject('ICacheService')
     private readonly cacheService: ICacheService,
-    @Inject('IUserService')
-    private readonly userService: IUserService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     // Only warm cache in production or when explicitly enabled
@@ -26,14 +23,14 @@ export class CacheWarmupService implements OnModuleInit {
    */
   async warmupCache(): Promise<void> {
     this.logger.log('Starting cache warmup...');
-    
+
     try {
       // Example: Pre-load recently active users or critical user data
       // In a real application, you might want to load:
       // - Most frequently accessed users
       // - System configuration data
       // - Other frequently queried data
-      
+
       this.logger.log('Cache warmup completed successfully');
     } catch (error) {
       this.logger.error('Cache warmup failed:', error);
@@ -61,10 +58,10 @@ export class CacheWarmupService implements OnModuleInit {
     try {
       this.logger.log('Clearing cache...');
       await this.cacheService.clear();
-      
+
       this.logger.log('Reloading cache...');
       await this.warmupCache();
-      
+
       return { success: true, message: 'Cache reloaded successfully' };
     } catch (error) {
       this.logger.error('Cache reload failed:', error);
