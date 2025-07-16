@@ -19,22 +19,27 @@ export class BaseUserDto extends BaseDto {
 export class CreateUserDto extends PickType(BaseUserDto, [
   'email',
   'password',
-] as const) { }
+] as const) {}
 
 // Update DTO - exclude fields users shouldn't be able to update
 export class UpdateUserDto extends PartialType(
-  OmitType(BaseUserDto, ['id', 'createdAt', 'updatedAt', 'refreshToken'] as const),
-) { }
+  OmitType(BaseUserDto, [
+    'id',
+    'createdAt',
+    'updatedAt',
+    'refreshToken',
+  ] as const),
+) {}
 
 // Internal DTO for system updates (allows refreshToken updates for auth service)
 export class InternalUpdateUserDto extends PartialType(
   OmitType(BaseUserDto, ['id', 'createdAt', 'updatedAt'] as const),
-) { }
+) {}
 
 // Query Params DTO - id and email are optional for filtering
 export class GetUsersQueryDto extends PartialType(
   PickType(BaseUserDto, ['id', 'email'] as const),
-) { }
+) {}
 
 // Response DTO - only safe fields (no password or refreshToken)
 export class UserResponseDto extends PickType(BaseUserDto, [

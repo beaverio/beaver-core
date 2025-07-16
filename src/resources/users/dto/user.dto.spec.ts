@@ -47,17 +47,20 @@ describe('DTO Behavior Tests', () => {
     it('should not include refreshToken property for security', () => {
       const updateDto = new UpdateUserDto();
       expect('refreshToken' in updateDto).toBe(false);
-      
+
       // Ensure UpdateUserDto doesn't inherit refreshToken validation
-      const dtoInstance = plainToClass(UpdateUserDto, { 
+      const dtoInstance = plainToClass(UpdateUserDto, {
         email: 'test@example.com',
         password: 'NewPass123!',
-        refreshToken: 'should-not-be-accepted'
+        refreshToken: 'should-not-be-accepted',
       });
-      
+
       // refreshToken should not be part of the DTO structure
       // Check if refreshToken property exists in the DTO class definition
-      const descriptor = Object.getOwnPropertyDescriptor(UpdateUserDto.prototype, 'refreshToken');
+      const descriptor = Object.getOwnPropertyDescriptor(
+        UpdateUserDto.prototype,
+        'refreshToken',
+      );
       expect(descriptor).toBeUndefined();
     });
   });
@@ -73,9 +76,9 @@ describe('DTO Behavior Tests', () => {
 
   describe('InternalUpdateUserDto', () => {
     it('should include refreshToken for internal system updates', async () => {
-      const validData = { 
+      const validData = {
         email: 'internal@example.com',
-        refreshToken: 'internal-token' 
+        refreshToken: 'internal-token',
       };
       const dto = plainToClass(InternalUpdateUserDto, validData);
       const errors = await validate(dto);
