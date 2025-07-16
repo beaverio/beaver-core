@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { hash } from 'bcryptjs';
 import {
   CreateUserDto,
-  GetUsersQueryDto,
+  QueryParamsUserDto,
   InternalUpdateUserDto,
   UpdateUserDto,
 } from '../dto/user.dto';
@@ -24,11 +24,11 @@ export class UsersService implements IUserService {
     });
   }
 
-  async getUsers(query: GetUsersQueryDto): Promise<User[]> {
+  async getUsers(query: QueryParamsUserDto): Promise<User[]> {
     return await this.userRepository.findAll(query);
   }
 
-  async getUser(query: GetUsersQueryDto): Promise<User> {
+  async getUser(query: QueryParamsUserDto): Promise<User> {
     const user = await this.userRepository.findOne(query);
 
     if (!user) {

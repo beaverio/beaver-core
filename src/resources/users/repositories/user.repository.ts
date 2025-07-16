@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   CreateUserDto,
-  GetUsersQueryDto,
+  QueryParamsUserDto,
   UpdateUserDto,
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
@@ -20,11 +20,11 @@ export class UserRepository implements IUserRepository {
     return this.repo.save(dto);
   }
 
-  async findAll(where: GetUsersQueryDto): Promise<User[]> {
+  async findAll(where: QueryParamsUserDto): Promise<User[]> {
     return this.repo.find({ where });
   }
 
-  async findOne(where: GetUsersQueryDto): Promise<User | null> {
+  async findOne(where: QueryParamsUserDto): Promise<User | null> {
     return this.repo.findOne({ where });
   }
 

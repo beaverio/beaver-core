@@ -3,7 +3,7 @@ import { plainToClass } from 'class-transformer';
 import {
   CreateUserDto,
   UpdateUserDto,
-  GetUsersQueryDto,
+  QueryParamsUserDto,
   UserResponseDto,
   InternalUpdateUserDto,
 } from './user.dto';
@@ -59,10 +59,10 @@ describe('DTO Behavior Tests', () => {
     });
   });
 
-  describe('GetUsersQueryDto', () => {
+  describe('QueryParamsUserDto', () => {
     it('should validate correctly with query parameters', async () => {
       const validData = { email: 'query@example.com' };
-      const dto = plainToClass(GetUsersQueryDto, validData);
+      const dto = plainToClass(QueryParamsUserDto, validData);
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
     });

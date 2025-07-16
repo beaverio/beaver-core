@@ -10,7 +10,7 @@ import {
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import {
-  GetUsersQueryDto,
+  QueryParamsUserDto,
   UpdateUserDto,
   UserResponseDto,
 } from './dto/user.dto';
@@ -26,7 +26,9 @@ export class UsersController {
   ) {}
 
   @Get()
-  async getUsers(@Query() query: GetUsersQueryDto): Promise<UserResponseDto[]> {
+  async getUsers(
+    @Query() query: QueryParamsUserDto,
+  ): Promise<UserResponseDto[]> {
     const users = await this.usersService.getUsers(query);
     return UserResponseDto.fromEntities(users);
   }

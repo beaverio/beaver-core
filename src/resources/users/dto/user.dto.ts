@@ -30,7 +30,7 @@ export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, [
 export class InternalUpdateUserDto extends CreateUpdateDto(BaseUserDto, []) {}
 
 // Query Params DTO - id and email are optional for filtering
-export class GetUsersQueryDto extends PartialType(
+export class QueryParamsUserDto extends PartialType(
   PickType(BaseUserDto, ['id', 'email'] as const),
 ) {}
 
