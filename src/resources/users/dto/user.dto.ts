@@ -1,12 +1,10 @@
-import { IsEmail, IsString, IsStrongPassword, IsUUID } from 'class-validator';
+import { IsEmail, IsString, IsStrongPassword } from 'class-validator';
 import { PickType, PartialType } from '@nestjs/mapped-types';
+import { BaseDto } from '../../../common/dto/base.dto';
 import { User } from '../entities/user.entity';
 
 // Base DTO containing all possible user fields with their validations
-export class BaseUserDto {
-  @IsUUID()
-  id: string;
-
+export class BaseUserDto extends BaseDto {
   @IsEmail()
   email: string;
 
@@ -42,11 +40,15 @@ export class GetUsersQueryDto extends PartialType(
 export class UserResponseDto extends PickType(BaseUserDto, [
   'id',
   'email',
+  'createdAt',
+  'updatedAt',
 ] as const) {
   static fromEntity(user: User): UserResponseDto {
     const dto = new UserResponseDto();
     dto.id = user.id;
     dto.email = user.email;
+    dto.createdAt = user.createdAt.toISOString();
+    dto.updatedAt = user.updatedAt.toISOString();
     return dto;
   }
 
