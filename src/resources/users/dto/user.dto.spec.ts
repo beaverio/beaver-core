@@ -5,6 +5,7 @@ import {
   UpdateUserDto,
   GetUsersQueryDto,
   UserResponseDto,
+  InternalUpdateUserDto,
 } from './user.dto';
 import { User } from '../entities/user.entity';
 
@@ -42,12 +43,47 @@ describe('DTO Behavior Tests', () => {
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
     });
+
+    it('should not include refreshToken property for security', () => {
+      const updateDto = new UpdateUserDto();
+      expect('refreshToken' in updateDto).toBe(false);
+      
+      // Ensure UpdateUserDto doesn't inherit refreshToken validation
+      const dtoInstance = plainToClass(UpdateUserDto, { 
+        email: 'test@example.com',
+        password: 'NewPass123!',
+        refreshToken: 'should-not-be-accepted'
+      });
+      
+      // refreshToken should not be part of the DTO
+      expect('refreshToken' in dtoInstance).toBe(false);
+    });
   });
 
   describe('GetUsersQueryDto', () => {
     it('should validate correctly with query parameters', async () => {
       const validData = { email: 'query@example.com' };
       const dto = plainToClass(GetUsersQueryDto, validData);
+      const errors = await validate(dto);
+      expect(errors).toHaveLength(0);
+    });
+  });
+
+  describe('InternalUpdateUserDto', () => {
+    it('should include refreshToken for internal system updates', async () => {
+      const validData = { 
+        email: 'internal@example.com',
+        refreshToken: 'internal-token' 
+      };
+      const dto = plainToClass(InternalUpdateUserDto, validData);
+      const errors = await validate(dto);
+      expect(errors).toHaveLength(0);
+      expect(dto.refreshToken).toBe('internal-token');
+    });
+
+    it('should validate refreshToken when provided', async () => {
+      const validData = { refreshToken: 'valid-refresh-token' };
+      const dto = plainToClass(InternalUpdateUserDto, validData);
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
     });

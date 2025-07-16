@@ -4,6 +4,7 @@ import {
   CreateUserDto,
   GetUsersQueryDto,
   UpdateUserDto,
+  InternalUpdateUserDto,
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
@@ -39,6 +40,16 @@ export class UsersService implements IUserService {
 
   async updateUser(id: string, dto: UpdateUserDto): Promise<User> {
     const updateData = { ...dto };
+
+    if (dto.password) {
+      updateData.password = await hash(dto.password, 10);
+    }
+
+    return await this.userRepository.update(id, updateData);
+  }
+
+  async updateUserInternal(id: string, dto: InternalUpdateUserDto): Promise<User> {
+    const updateData: any = { ...dto };
 
     if (dto.password) {
       updateData.password = await hash(dto.password, 10);

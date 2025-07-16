@@ -94,7 +94,7 @@ export class AuthService implements IAuthService {
       secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
     });
 
-    await this.userService.updateUser(user.id, {
+    await this.userService.updateUserInternal(user.id, {
       refreshToken,
     });
 

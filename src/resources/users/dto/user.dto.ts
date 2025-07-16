@@ -23,8 +23,13 @@ export class CreateUserDto extends PickType(BaseUserDto, [
   'password',
 ] as const) {}
 
-// Update DTO - all fields optional except id
+// Update DTO - all fields optional except id (public-facing, excludes refreshToken for security)
 export class UpdateUserDto extends PartialType(
+  PickType(BaseUserDto, ['email', 'password'] as const),
+) {}
+
+// Internal DTO for system updates (includes refreshToken for auth service)
+export class InternalUpdateUserDto extends PartialType(
   PickType(BaseUserDto, ['email', 'password', 'refreshToken'] as const),
 ) {}
 
