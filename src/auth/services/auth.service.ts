@@ -11,6 +11,7 @@ import { Response } from 'express';
 import { CreateUserDto } from 'src/resources/users/dto/user.dto';
 import { User } from 'src/resources/users/entities/user.entity';
 import { IUserService } from 'src/resources/users/interfaces/user-service.interface';
+import { ISessionService } from '../../common/interfaces/session-service.interface';
 import { IAuthService } from '../interfaces/auth-service.interface';
 import { ITokenPayload } from '../interfaces/token-payload-interface';
 
@@ -19,6 +20,8 @@ export class AuthService implements IAuthService {
   constructor(
     @Inject('IUserService')
     private readonly userService: IUserService,
+    @Inject('ISessionService')
+    private readonly sessionService: ISessionService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
   ) {}
@@ -38,6 +41,16 @@ export class AuthService implements IAuthService {
 
   async verifyRefreshToken(refreshToken: string, userId: string) {
     try {
+      // First check if the session is valid in cache (not blacklisted)
+      const isSessionValid = await this.sessionService.isSessionValid(
+        userId,
+        refreshToken,
+      );
+      if (!isSessionValid) {
+        throw new UnauthorizedException('Session has been revoked');
+      }
+
+      // Then verify against the database
       const user = await this.userService.getUser({ id: userId });
       const authenticated = await compare(
         refreshToken,
@@ -97,9 +110,17 @@ export class AuthService implements IAuthService {
       secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
     });
 
+    // Update user with hashed refresh token in database
     await this.userService.updateUserInternal(user.id, {
       refreshToken,
     });
+
+    // Store session in cache for revocation capabilities
+    await this.sessionService.storeSession(
+      user.id,
+      refreshToken,
+      expirationRefreshToken,
+    );
 
     response.cookie('authentication', accessToken, {
       httpOnly: true,
@@ -112,5 +133,26 @@ export class AuthService implements IAuthService {
       secure: this.configService.get<string>('NODE_ENV') === 'production',
       expires: expirationRefreshToken,
     });
+  }
+
+  /**
+   * Logout a user by revoking their refresh token session
+   */
+  async logout(userId: string, refreshToken: string): Promise<void> {
+    await this.sessionService.revokeSession(userId, refreshToken);
+  }
+
+  /**
+   * Logout user from all devices by revoking all sessions
+   */
+  async logoutAllDevices(userId: string): Promise<void> {
+    await this.sessionService.revokeAllUserSessions(userId);
+  }
+
+  /**
+   * Get active session count for a user
+   */
+  async getActiveSessionCount(userId: string): Promise<number> {
+    return await this.sessionService.getActiveSessionCount(userId);
   }
 }

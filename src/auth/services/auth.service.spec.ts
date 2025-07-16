@@ -8,8 +8,17 @@ describe('AuthService', () => {
 
   const mockUserService = {
     getUser: jest.fn(),
+    getUsers: jest.fn(),
     createUser: jest.fn(),
     updateUserInternal: jest.fn(),
+  };
+
+  const mockSessionService = {
+    storeSession: jest.fn(),
+    isSessionValid: jest.fn(),
+    revokeSession: jest.fn(),
+    revokeAllUserSessions: jest.fn(),
+    getActiveSessionCount: jest.fn(),
   };
 
   const mockConfigService = {
@@ -28,6 +37,10 @@ describe('AuthService', () => {
         {
           provide: 'IUserService',
           useValue: mockUserService,
+        },
+        {
+          provide: 'ISessionService',
+          useValue: mockSessionService,
         },
         {
           provide: ConfigService,
