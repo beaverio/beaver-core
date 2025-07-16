@@ -3,11 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { compare } from 'bcryptjs';
 import { Response } from 'express';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { User } from 'src/users/entities/user.entity';
-import { IUserService } from 'src/users/interfaces/user-service.interface';
-import { IAuthService } from './interfaces/auth-service.interface';
-import { ITokenPayload } from './interfaces/token-payload-interface';
+import { CreateUserDto } from 'src/resources/users/dto/user.dto';
+import { User } from 'src/resources/users/entities/user.entity';
+import { IUserService } from 'src/resources/users/interfaces/user-service.interface';
+import { IAuthService } from '../interfaces/auth-service.interface';
+import { ITokenPayload } from '../interfaces/token-payload-interface';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -49,7 +49,7 @@ export class AuthService implements IAuthService {
     if (existingUser) {
       throw new BadRequestException('Email already exists');
     }
-    return this.userService.createUser(dto);
+    return await this.userService.createUser(dto);
   }
 
   async signin(user: User, response: Response) {

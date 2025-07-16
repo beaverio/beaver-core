@@ -1,11 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { hash } from 'bcryptjs';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
-import { IUserRepository } from './interfaces/user-repository.interface';
-import { IUserService } from './interfaces/user-service.interface';
-import { GetUsersQueryDto } from './dto/query-params-user.dto';
+import { CreateUserDto, GetUsersQueryDto, UpdateUserDto } from '../dto/user.dto';
+import { User } from '../entities/user.entity';
+import { IUserRepository } from '../interfaces/user-repository.interface';
+import { IUserService } from '../interfaces/user-service.interface';
 
 @Injectable()
 export class UsersService implements IUserService {
@@ -46,6 +44,6 @@ export class UsersService implements IUserService {
       updateData.refreshToken = await hash(dto.refreshToken, 10)
     }
 
-    return this.userRepository.update(id, updateData);
+    return await this.userRepository.update(id, updateData)
   }
 }

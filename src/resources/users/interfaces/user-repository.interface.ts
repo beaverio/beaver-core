@@ -1,6 +1,4 @@
-import { CreateUserDto } from '../dto/create-user.dto';
-import { GetUsersQueryDto } from '../dto/query-params-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
+import { CreateUserDto, GetUsersQueryDto, UpdateUserDto } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
 
 export interface IUserRepository {

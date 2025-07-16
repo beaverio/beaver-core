@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateUserDto } from '../dto/create-user.dto';
-import { GetUsersQueryDto } from '../dto/query-params-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
+import { CreateUserDto, GetUsersQueryDto, UpdateUserDto } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
 
@@ -33,7 +31,7 @@ export class UserRepository implements IUserRepository {
       throw new Error('User not found');
     }
 
-    Object.assign(user, dto);
-    return this.repo.save(user);
+    this.repo.merge(user, dto);
+    return await this.repo.save(user);
   }
 }

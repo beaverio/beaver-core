@@ -1,6 +1,6 @@
 import { Response } from 'express';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { User } from 'src/users/entities/user.entity';
+import { CreateUserDto } from 'src/resources/users/dto/user.dto';
+import { User } from 'src/resources/users/entities/user.entity';
 
 export interface IAuthService {
   signup(dto: CreateUserDto): Promise<User>;
