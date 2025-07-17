@@ -5,7 +5,6 @@ import {
   UpdateUserDto,
   QueryParamsUserDto,
   UserResponseDto,
-  InternalUpdateUserDto,
 } from './user.dto';
 import { User } from '../entities/user.entity';
 
@@ -65,20 +64,6 @@ describe('DTO Behavior Tests', () => {
       const dto = plainToClass(QueryParamsUserDto, validData);
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
-    });
-  });
-
-  describe('InternalUpdateUserDto', () => {
-    it('should accept email and password for internal system updates', async () => {
-      const validData = {
-        email: 'internal@example.com',
-        password: 'InternalPass123!',
-      };
-      const dto = plainToClass(InternalUpdateUserDto, validData);
-      const errors = await validate(dto);
-      expect(errors).toHaveLength(0);
-      expect(dto.email).toBe('internal@example.com');
-      expect(dto.password).toBe('InternalPass123!');
     });
   });
 
