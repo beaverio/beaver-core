@@ -14,7 +14,6 @@ describe('CachedUserRepository', () => {
     id: 'test-id',
     email: 'test@example.com',
     password: 'hashedPassword',
-    refreshToken: 'hashedRefreshToken',
     createdAt: new Date(),
     updatedAt: new Date(),
   };

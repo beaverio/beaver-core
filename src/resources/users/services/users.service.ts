@@ -60,10 +60,6 @@ export class UsersService implements IUserService {
       updateData.password = await hash(dto.password, 10);
     }
 
-    if (dto.refreshToken) {
-      updateData.refreshToken = await hash(dto.refreshToken, 10);
-    }
-
     return await this.userRepository.update(id, updateData as UpdateUserDto);
   }
 }

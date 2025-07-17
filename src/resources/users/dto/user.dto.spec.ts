@@ -69,22 +69,16 @@ describe('DTO Behavior Tests', () => {
   });
 
   describe('InternalUpdateUserDto', () => {
-    it('should include refreshToken for internal system updates', async () => {
+    it('should accept email and password for internal system updates', async () => {
       const validData = {
         email: 'internal@example.com',
-        refreshToken: 'internal-token',
+        password: 'InternalPass123!',
       };
       const dto = plainToClass(InternalUpdateUserDto, validData);
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
-      expect(dto.refreshToken).toBe('internal-token');
-    });
-
-    it('should validate refreshToken when provided', async () => {
-      const validData = { refreshToken: 'valid-refresh-token' };
-      const dto = plainToClass(InternalUpdateUserDto, validData);
-      const errors = await validate(dto);
-      expect(errors).toHaveLength(0);
+      expect(dto.email).toBe('internal@example.com');
+      expect(dto.password).toBe('InternalPass123!');
     });
   });
 
@@ -94,7 +88,6 @@ describe('DTO Behavior Tests', () => {
       user.id = 'test-uuid';
       user.email = 'response@example.com';
       user.password = 'should-not-appear';
-      user.refreshToken = 'should-not-appear';
       user.createdAt = new Date('2023-01-01T00:00:00Z');
       user.updatedAt = new Date('2023-01-01T12:00:00Z');
 

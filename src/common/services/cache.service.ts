@@ -13,7 +13,7 @@ export class CacheService implements ICacheService {
   constructor(
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-  ) { }
+  ) {}
 
   async get<T>(key: string): Promise<T | null> {
     try {

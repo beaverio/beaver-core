@@ -25,7 +25,7 @@ export class AuthController {
   constructor(
     @Inject('IAuthService')
     private readonly authService: IAuthService,
-  ) { }
+  ) {}
 
   @Post('signup')
   async signUp(

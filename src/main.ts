@@ -17,7 +17,7 @@ async function bootstrap() {
       { path: '/auth', method: RequestMethod.ALL },
       { path: '/auth/*path', method: RequestMethod.ALL },
       { path: '/health', method: RequestMethod.ALL },
-      { path: '/health/*path', method: RequestMethod.ALL }
+      { path: '/health/*path', method: RequestMethod.ALL },
     ],
   });
 

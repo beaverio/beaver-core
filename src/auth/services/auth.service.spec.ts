@@ -21,6 +21,15 @@ describe('AuthService', () => {
     getActiveSessionCount: jest.fn(),
   };
 
+  const mockRefreshTokenRepository = {
+    create: jest.fn(),
+    findByUserIdAndTokenHash: jest.fn(),
+    findByUserId: jest.fn(),
+    deleteByUserIdAndTokenHash: jest.fn(),
+    deleteAllByUserId: jest.fn(),
+    deleteExpired: jest.fn(),
+  };
+
   const mockConfigService = {
     getOrThrow: jest.fn().mockReturnValue('test-value'),
     get: jest.fn().mockReturnValue('test'),
@@ -41,6 +50,10 @@ describe('AuthService', () => {
         {
           provide: 'ISessionService',
           useValue: mockSessionService,
+        },
+        {
+          provide: 'IRefreshTokenRepository',
+          useValue: mockRefreshTokenRepository,
         },
         {
           provide: ConfigService,
