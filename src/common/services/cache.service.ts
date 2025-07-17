@@ -13,7 +13,7 @@ export class CacheService implements ICacheService {
   constructor(
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache,
-  ) {}
+  ) { }
 
   async get<T>(key: string): Promise<T | null> {
     try {
@@ -55,8 +55,6 @@ export class CacheService implements ICacheService {
 
   deleteByPattern(pattern: string): Promise<void> {
     try {
-      // For Redis cache-manager, we'll use a simple approach
-      // In production, you might want to implement Redis SCAN for better performance
       this.logger.debug(
         `Cache delete by pattern: ${pattern} - pattern deletion not implemented for safety`,
       );

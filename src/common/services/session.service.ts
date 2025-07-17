@@ -13,7 +13,7 @@ export class SessionService implements ISessionService {
   constructor(
     @Inject('ICacheService')
     private readonly cacheService: ICacheService,
-  ) {}
+  ) { }
 
   async storeSession(
     userId: string,
