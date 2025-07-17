@@ -16,8 +16,8 @@ import {
 import * as crypto from 'crypto';
 
 @Injectable()
-export class CachedUserRepository implements IUserRepository {
-  private readonly logger = new Logger(CachedUserRepository.name);
+export class UserRepository implements IUserRepository {
+  private readonly logger = new Logger(UserRepository.name);
   private readonly CACHE_PREFIX = 'user:';
   private readonly PAGINATED_CACHE_PREFIX = 'user:paginated:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes

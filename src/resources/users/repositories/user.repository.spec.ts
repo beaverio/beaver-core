@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CachedUserRepository } from './cached-user.repository';
+import { UserRepository } from './user.repository';
 import { User } from '../entities/user.entity';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 
-describe('CachedUserRepository', () => {
-  let repository: CachedUserRepository;
+describe('UserRepository', () => {
+  let repository: UserRepository;
   let userRepository: jest.Mocked<Repository<User>>;
   let cacheService: jest.Mocked<ICacheService>;
 
@@ -47,7 +47,7 @@ describe('CachedUserRepository', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CachedUserRepository,
+        UserRepository,
         {
           provide: getRepositoryToken(User),
           useValue: mockUserRepository,
@@ -59,7 +59,7 @@ describe('CachedUserRepository', () => {
       ],
     }).compile();
 
-    repository = module.get<CachedUserRepository>(CachedUserRepository);
+    repository = module.get<UserRepository>(UserRepository);
     userRepository = module.get<Repository<User>>(
       getRepositoryToken(User),
     ) as jest.Mocked<Repository<User>>;
