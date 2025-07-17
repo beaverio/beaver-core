@@ -1,4 +1,4 @@
-import { IsEmail, IsString, IsStrongPassword } from 'class-validator';
+import { IsEmail, IsStrongPassword } from 'class-validator';
 import { PickType, PartialType } from '@nestjs/mapped-types';
 import { BaseDto, CreateUpdateDto } from '../../../common/dto/base.dto';
 import { User } from '../entities/user.entity';
@@ -10,9 +10,6 @@ export class BaseUserDto extends BaseDto {
 
   @IsStrongPassword()
   password: string;
-
-  @IsString()
-  refreshToken: string;
 }
 
 // Create DTO - only requires email and password
@@ -21,10 +18,8 @@ export class CreateUserDto extends PickType(BaseUserDto, [
   'password',
 ] as const) {}
 
-// Update DTO - automatically excludes id, createdAt, updatedAt, and refreshToken
-export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, [
-  'refreshToken',
-]) {}
+// Update DTO - automatically excludes id, createdAt, updatedAt
+export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, []) {}
 
 // Internal DTO for system updates - automatically excludes id, createdAt, updatedAt
 export class InternalUpdateUserDto extends CreateUpdateDto(BaseUserDto, []) {}
@@ -34,7 +29,7 @@ export class QueryParamsUserDto extends PartialType(
   PickType(BaseUserDto, ['id', 'email'] as const),
 ) {}
 
-// Response DTO - only safe fields (no password or refreshToken)
+// Response DTO - only safe fields (no password)
 export class UserResponseDto extends PickType(BaseUserDto, [
   'id',
   'email',
@@ -45,8 +40,14 @@ export class UserResponseDto extends PickType(BaseUserDto, [
     const dto = new UserResponseDto();
     dto.id = user.id;
     dto.email = user.email;
-    dto.createdAt = user.createdAt.toISOString();
-    dto.updatedAt = user.updatedAt.toISOString();
+    dto.createdAt =
+      user.createdAt instanceof Date
+        ? user.createdAt.toISOString()
+        : user.createdAt;
+    dto.updatedAt =
+      user.updatedAt instanceof Date
+        ? user.updatedAt.toISOString()
+        : user.updatedAt;
     return dto;
   }
 

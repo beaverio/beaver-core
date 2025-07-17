@@ -6,6 +6,8 @@ import { redisConfig } from './config/redis.config';
 import { typeOrmConfig } from './config/typeorm.config';
 import { UsersModule } from './resources/users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { CommonModule } from './common/common.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -21,8 +23,10 @@ import { AuthModule } from './auth/auth.module';
       inject: [ConfigService],
       useFactory: typeOrmConfig,
     }),
+    CommonModule,
     UsersModule,
     AuthModule,
+    HealthModule,
   ],
   providers: [],
 })

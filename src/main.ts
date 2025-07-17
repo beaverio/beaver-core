@@ -13,7 +13,12 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('v1', {
-    exclude: [{ path: '/auth/*path', method: RequestMethod.ALL }],
+    exclude: [
+      { path: '/auth', method: RequestMethod.ALL },
+      { path: '/auth/*path', method: RequestMethod.ALL },
+      { path: '/health', method: RequestMethod.ALL },
+      { path: '/health/*path', method: RequestMethod.ALL },
+    ],
   });
 
   app.use(cookieParser());

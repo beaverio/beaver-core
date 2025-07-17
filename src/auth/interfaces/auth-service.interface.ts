@@ -7,4 +7,7 @@ export interface IAuthService {
   signin(user: User, response: Response): Promise<void>;
   verifyUser(email: string, password: string): Promise<User>;
   verifyRefreshToken(refreshToken: string, userId: string): Promise<User>;
+  logout(userId: string, refreshToken: string): Promise<void>;
+  logoutAllDevices(userId: string): Promise<void>;
+  getActiveSessionCount(userId: string): Promise<number>;
 }

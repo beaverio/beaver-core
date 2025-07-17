@@ -3,7 +3,6 @@ import { hash } from 'bcryptjs';
 import {
   CreateUserDto,
   QueryParamsUserDto,
-  InternalUpdateUserDto,
   UpdateUserDto,
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
@@ -15,7 +14,7 @@ export class UsersService implements IUserService {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
-  ) {}
+  ) { }
 
   async createUser(dto: CreateUserDto): Promise<User> {
     return this.userRepository.create({
@@ -49,21 +48,4 @@ export class UsersService implements IUserService {
     return await this.userRepository.update(id, updateData);
   }
 
-  // For internal updates we don't want to expose through the controller
-  async updateUserInternal(
-    id: string,
-    dto: InternalUpdateUserDto,
-  ): Promise<User> {
-    const updateData: Partial<User> = { ...dto };
-
-    if (dto.password) {
-      updateData.password = await hash(dto.password, 10);
-    }
-
-    if (dto.refreshToken) {
-      updateData.refreshToken = await hash(dto.refreshToken, 10);
-    }
-
-    return await this.userRepository.update(id, updateData as UpdateUserDto);
-  }
 }
