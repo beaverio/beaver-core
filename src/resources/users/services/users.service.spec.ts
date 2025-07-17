@@ -1,8 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  ICursorPaginationOptions,
-  ICursorPaginatedResult,
-} from 'src/common/interfaces/cursor-pagination.interface';
+import { NotFoundException } from '@nestjs/common';
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
 import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 
@@ -17,12 +15,32 @@ describe('UsersService', () => {
     updatedAt: new Date('2023-01-01'),
   };
 
+  const mockPaginatedResult: Paginated<User> = {
+    data: [mockUser],
+    meta: {
+      itemsPerPage: 50,
+      totalItems: 1,
+      currentPage: 1,
+      totalPages: 1,
+      sortBy: [['createdAt', 'DESC']],
+      searchBy: [],
+      search: '',
+      select: [],
+      filter: {},
+    },
+    links: {
+      first: '?limit=50',
+      current: '?page=1&limit=50',
+      last: '?limit=50',
+    },
+  };
+
   const mockUserRepository = {
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
-    findAllCursor: jest.fn(),
+    findPaginated: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -37,60 +55,127 @@ describe('UsersService', () => {
     }).compile();
 
     service = module.get<UsersService>(UsersService);
+
+    // Reset all mocks before each test
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getUsersCursor', () => {
-    it('should call repository findAllCursor method', async () => {
-      const options: ICursorPaginationOptions = {
-        limit: 10,
-        sortBy: 'email',
-        sortOrder: 'ASC',
-      };
-      const query = { email: 'test@example.com' };
-      const expectedResult: ICursorPaginatedResult<User> = {
-        data: [mockUser],
-        nextCursor: 'next-cursor',
-        prevCursor: undefined,
-        hasNext: true,
-        hasPrevious: false,
+  describe('getUsers', () => {
+    it('should call repository findPaginated method', async () => {
+      const query: PaginateQuery = {
+        page: 1,
+        limit: 50,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
       };
 
-      mockUserRepository.findAllCursor.mockResolvedValue(expectedResult);
+      mockUserRepository.findPaginated.mockResolvedValue(mockPaginatedResult);
 
-      const result = await service.getUsersCursor(options, query);
+      const result = await service.getUsers(query);
 
-      expect(mockUserRepository.findAllCursor).toHaveBeenCalledWith(
-        options,
-        query,
-      );
-      expect(result).toBe(expectedResult);
+      expect(mockUserRepository.findPaginated).toHaveBeenCalledWith(query);
+      expect(result).toEqual(mockPaginatedResult);
     });
 
-    it('should call repository findAllCursor without optional parameters', async () => {
-      const options: ICursorPaginationOptions = {
+    it('should handle filtering in paginated query', async () => {
+      const query: PaginateQuery = {
+        page: 1,
         limit: 10,
-      };
-      const expectedResult: ICursorPaginatedResult<User> = {
-        data: [],
-        nextCursor: undefined,
-        prevCursor: undefined,
-        hasNext: false,
-        hasPrevious: false,
+        sortBy: [['email', 'ASC']],
+        searchBy: [],
+        search: '',
+        filter: { email: 'test@example.com' },
+        path: '',
       };
 
-      mockUserRepository.findAllCursor.mockResolvedValue(expectedResult);
+      mockUserRepository.findPaginated.mockResolvedValue(mockPaginatedResult);
 
-      const result = await service.getUsersCursor(options);
+      const result = await service.getUsers(query);
 
-      expect(mockUserRepository.findAllCursor).toHaveBeenCalledWith(
-        options,
-        undefined,
+      expect(mockUserRepository.findPaginated).toHaveBeenCalledWith(query);
+      expect(result).toEqual(mockPaginatedResult);
+    });
+  });
+
+  describe('getUser', () => {
+    it('should return user when found', async () => {
+      const query = { email: 'test@example.com' };
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+
+      const result = await service.getUser(query);
+
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith(query);
+      expect(result).toEqual(mockUser);
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      const query = { email: 'nonexistent@example.com' };
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getUser(query)).rejects.toThrow(NotFoundException);
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith(query);
+    });
+  });
+
+  describe('createUser', () => {
+    it('should create user with hashed password', async () => {
+      const createDto = {
+        email: 'new@example.com',
+        password: 'plaintext',
+      };
+
+      const expectedUser = {
+        ...mockUser,
+        email: 'new@example.com',
+      };
+
+      mockUserRepository.create.mockResolvedValue(expectedUser);
+
+      const result = await service.createUser(createDto);
+
+      expect(mockUserRepository.create).toHaveBeenCalledWith({
+        email: 'new@example.com',
+        password: expect.any(String), // Should be hashed
+      });
+      expect(result).toEqual(expectedUser);
+    });
+  });
+
+  describe('updateUser', () => {
+    it('should update user', async () => {
+      const updateDto = { email: 'updated@example.com' };
+      const updatedUser = { ...mockUser, ...updateDto };
+
+      mockUserRepository.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateUser('test-id', updateDto);
+
+      expect(mockUserRepository.update).toHaveBeenCalledWith(
+        'test-id',
+        updateDto,
       );
-      expect(result).toBe(expectedResult);
+      expect(result).toEqual(updatedUser);
+    });
+
+    it('should hash password when updating', async () => {
+      const updateDto = { password: 'newpassword' };
+      const updatedUser = { ...mockUser };
+
+      mockUserRepository.update.mockResolvedValue(updatedUser);
+
+      const result = await service.updateUser('test-id', updateDto);
+
+      expect(mockUserRepository.update).toHaveBeenCalledWith('test-id', {
+        password: expect.any(String), // Should be hashed
+      });
+      expect(result).toEqual(updatedUser);
     });
   });
 });

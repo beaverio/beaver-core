@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -90,12 +91,20 @@ export class AuthService implements IAuthService {
   }
 
   async signup(dto: CreateUserDto): Promise<User> {
-    const [existingUser] = await this.userService.getUsers({
-      email: dto.email,
-    });
+    // Use the findOne method instead of paginated search for checking existence
+    try {
+      const existingUser = await this.userService.getUser({
+        email: dto.email,
+      });
 
-    if (existingUser) {
-      throw new BadRequestException('Email already exists');
+      if (existingUser) {
+        throw new BadRequestException('Email already exists');
+      }
+    } catch (error) {
+      // User not found is expected, continue with signup
+      if (!(error instanceof NotFoundException)) {
+        throw error;
+      }
     }
 
     return await this.userService.createUser(dto);

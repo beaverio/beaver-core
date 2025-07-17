@@ -1,0 +1,45 @@
+import { Repository, ObjectLiteral } from 'typeorm';
+import {
+  Paginated,
+  PaginateQuery,
+  PaginateConfig,
+  paginate,
+} from 'nestjs-paginate';
+import { IPaginatedRepository } from '../interfaces/paginated-repository.interface';
+
+/**
+ * Base repository class that provides pagination functionality using nestjs-paginate
+ * All entity repositories can extend this class for consistent pagination behavior
+ */
+export abstract class BasePaginatedRepository<T extends ObjectLiteral>
+  implements IPaginatedRepository<T>
+{
+  constructor(protected readonly repository: Repository<T>) {}
+
+  /**
+   * Get the default pagination configuration for this entity
+   * Subclasses should override this to define entity-specific configuration
+   */
+  protected abstract getDefaultPaginateConfig(): PaginateConfig<T>;
+
+  /**
+   * Find entities with pagination support
+   * @param query - Pagination query parameters from nestjs-paginate
+   * @param config - Optional custom pagination configuration
+   * @returns Paginated result
+   */
+  async findPaginated(
+    query: PaginateQuery,
+    config?: PaginateConfig<T>,
+  ): Promise<Paginated<T>> {
+    const paginateConfig = config || this.getDefaultPaginateConfig();
+
+    // Ensure default limit is applied if not provided
+    const paginateQuery = {
+      ...query,
+      limit: query.limit || paginateConfig.defaultLimit || 50,
+    };
+
+    return paginate(paginateQuery, this.repository, paginateConfig);
+  }
+}

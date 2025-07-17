@@ -1,26 +1,44 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CursorPaginationQueryDto } from 'src/common/dto/cursor-pagination.dto';
-import { ICursorPaginatedResult } from 'src/common/interfaces/cursor-pagination.interface';
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
 import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 
 describe('UsersController', () => {
   let controller: UsersController;
 
-  const mockUser = {
+  const mockUser: User = {
     id: 'test-id',
     email: 'test@example.com',
+    password: 'hashed-password',
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
+  const mockPaginatedResult: Paginated<User> = {
+    data: [mockUser],
+    meta: {
+      itemsPerPage: 50,
+      totalItems: 1,
+      currentPage: 1,
+      totalPages: 1,
+      sortBy: [['createdAt', 'DESC']],
+      searchBy: [],
+      search: '',
+      select: [],
+      filter: {},
+    },
+    links: {
+      first: '?limit=50',
+      current: '?page=1&limit=50',
+      last: '?limit=50',
+    },
+  };
+
   const mockUserService = {
     getUsers: jest.fn(),
-    getUsersCursor: jest.fn(),
     getUser: jest.fn(),
     updateUser: jest.fn(),
     createUser: jest.fn(),
-    updateUserInternal: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -45,130 +63,92 @@ describe('UsersController', () => {
   });
 
   describe('getUsers', () => {
-    it('should return users when no pagination params are provided', async () => {
-      const query = { email: 'test@example.com' };
-      const paginationQuery = {}; // Empty object to simulate no query params
-      const users = [mockUser];
+    it('should return paginated users', async () => {
+      const query: PaginateQuery = {
+        page: 1,
+        limit: 50,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
 
-      mockUserService.getUsers.mockResolvedValue(users);
+      mockUserService.getUsers.mockResolvedValue(mockPaginatedResult);
 
-      const result = await controller.getUsers(
-        query,
-        paginationQuery as CursorPaginationQueryDto,
-      );
+      const result = await controller.getUsers(query);
 
       expect(mockUserService.getUsers).toHaveBeenCalledWith(query);
-      expect(mockUserService.getUsersCursor).not.toHaveBeenCalled();
-      expect(Array.isArray(result)).toBe(true);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].email).toBe('test@example.com');
+      expect(result.meta.totalItems).toBe(1);
+      expect(result.meta.itemsPerPage).toBe(50);
     });
 
-    it('should return cursor paginated users when cursor param is provided', async () => {
-      const query = { email: 'test@example.com' };
-      const paginationQuery = new CursorPaginationQueryDto();
-      paginationQuery.cursor = 'test-cursor';
-      paginationQuery.limit = 10;
-
-      const cursorResult: ICursorPaginatedResult<User> = {
-        data: [mockUser as User],
-        nextCursor: 'next-cursor',
-        prevCursor: undefined,
-        hasNext: true,
-        hasPrevious: false,
+    it('should handle pagination with filtering', async () => {
+      const query: PaginateQuery = {
+        page: 1,
+        limit: 10,
+        sortBy: [['email', 'ASC']],
+        searchBy: [],
+        search: '',
+        filter: { email: 'test@example.com' },
+        path: '',
       };
 
-      mockUserService.getUsersCursor.mockResolvedValue(cursorResult);
+      mockUserService.getUsers.mockResolvedValue(mockPaginatedResult);
 
-      const result = await controller.getUsers(query, paginationQuery);
+      const result = await controller.getUsers(query);
 
-      expect(mockUserService.getUsersCursor).toHaveBeenCalledWith(
-        paginationQuery,
-        query,
-      );
-      expect(mockUserService.getUsers).not.toHaveBeenCalled();
-      expect(result).toHaveProperty('data');
-      expect(result).toHaveProperty('nextCursor');
-      expect(result).toHaveProperty('hasNext');
+      expect(mockUserService.getUsers).toHaveBeenCalledWith(query);
+      expect(result.data).toBeDefined();
     });
 
-    it('should return cursor paginated users when limit param is provided', async () => {
-      const query = { email: 'test@example.com' };
-      const paginationQuery = new CursorPaginationQueryDto();
-      paginationQuery.limit = 5;
-
-      const cursorResult: ICursorPaginatedResult<User> = {
-        data: [mockUser as User],
-        nextCursor: undefined,
-        prevCursor: undefined,
-        hasNext: false,
-        hasPrevious: false,
+    it('should handle search functionality', async () => {
+      const query: PaginateQuery = {
+        page: 1,
+        limit: 50,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: ['email'],
+        search: 'test',
+        filter: {},
+        path: '',
       };
 
-      mockUserService.getUsersCursor.mockResolvedValue(cursorResult);
+      mockUserService.getUsers.mockResolvedValue(mockPaginatedResult);
 
-      await controller.getUsers(query, paginationQuery);
+      const result = await controller.getUsers(query);
 
-      expect(mockUserService.getUsersCursor).toHaveBeenCalledWith(
-        paginationQuery,
-        query,
-      );
-    });
-
-    it('should handle pagination with sorting parameters', async () => {
-      const query = { email: 'test@example.com' };
-      const paginationQuery = new CursorPaginationQueryDto();
-      paginationQuery.limit = 20;
-      paginationQuery.sortBy = 'email';
-      paginationQuery.sortOrder = 'DESC';
-
-      const cursorResult: ICursorPaginatedResult<User> = {
-        data: [mockUser as User],
-        nextCursor: 'next-cursor',
-        prevCursor: 'prev-cursor',
-        hasNext: true,
-        hasPrevious: true,
-      };
-
-      mockUserService.getUsersCursor.mockResolvedValue(cursorResult);
-
-      await controller.getUsers(query, paginationQuery);
-
-      expect(mockUserService.getUsersCursor).toHaveBeenCalledWith(
-        paginationQuery,
-        query,
-      );
+      expect(mockUserService.getUsers).toHaveBeenCalledWith(query);
+      expect(result.data).toBeDefined();
     });
   });
 
-  describe('getUsersCursor', () => {
-    it('should return cursor-paginated users', async () => {
-      const query = { email: 'test@example.com' };
-      const paginationQuery = new CursorPaginationQueryDto();
-      paginationQuery.cursor = 'test-cursor';
-      paginationQuery.limit = 10;
-      paginationQuery.sortBy = 'createdAt';
-      paginationQuery.sortOrder = 'DESC';
+  describe('getSelf', () => {
+    it('should return the current user', () => {
+      const result = controller.getSelf(mockUser);
 
-      const cursorResult: ICursorPaginatedResult<User> = {
-        data: [mockUser as User],
-        nextCursor: 'next-cursor',
-        prevCursor: 'prev-cursor',
-        hasNext: true,
-        hasPrevious: true,
-      };
+      expect(result.id).toBe(mockUser.id);
+      expect(result.email).toBe(mockUser.email);
+      expect(result).not.toHaveProperty('password');
+    });
+  });
 
-      mockUserService.getUsersCursor.mockResolvedValue(cursorResult);
+  describe('updateUser', () => {
+    it('should update a user', async () => {
+      const updateDto = { email: 'updated@example.com' };
+      const updatedUser = { ...mockUser, ...updateDto };
 
-      const result = await controller.getUsersCursor(query, paginationQuery);
+      mockUserService.updateUser.mockResolvedValue(updatedUser);
 
-      expect(mockUserService.getUsersCursor).toHaveBeenCalledWith(
-        paginationQuery,
-        query,
+      const result = await controller.updateUser(mockUser, updateDto);
+
+      expect(mockUserService.updateUser).toHaveBeenCalledWith(
+        mockUser.id,
+        updateDto,
       );
-      expect(result.data).toBeDefined();
-      expect(result.nextCursor).toEqual(cursorResult.nextCursor);
-      expect(result.prevCursor).toEqual(cursorResult.prevCursor);
-      expect(result.hasNext).toEqual(cursorResult.hasNext);
-      expect(result.hasPrevious).toEqual(cursorResult.hasPrevious);
+      expect(result.email).toBe('updated@example.com');
+      expect(result).not.toHaveProperty('password');
     });
   });
 });
