@@ -8,6 +8,10 @@ import {
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
 import { IUserService } from '../interfaces/user-service.interface';
+import {
+  IPaginationOptions,
+  IPaginatedResult,
+} from '../../../common/interfaces/pagination.interface';
 
 @Injectable()
 export class UsersService implements IUserService {
@@ -25,6 +29,13 @@ export class UsersService implements IUserService {
 
   async getUsers(query: QueryParamsUserDto): Promise<User[]> {
     return await this.userRepository.findAll(query);
+  }
+
+  async getUsersPaginated(
+    options: IPaginationOptions,
+    query?: QueryParamsUserDto,
+  ): Promise<IPaginatedResult<User>> {
+    return await this.userRepository.findAllPaginated(options, query);
   }
 
   async getUser(query: QueryParamsUserDto): Promise<User> {

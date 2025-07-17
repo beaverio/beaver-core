@@ -10,6 +10,10 @@ import {
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import {
+  PaginationQueryDto,
+  PaginatedResponseDto,
+} from 'src/common/dto/pagination.dto';
+import {
   QueryParamsUserDto,
   UpdateUserDto,
   UserResponseDto,
@@ -27,10 +31,43 @@ export class UsersController {
 
   @Get()
   async getUsers(
-    @Query() query: QueryParamsUserDto,
-  ): Promise<UserResponseDto[]> {
-    const users = await this.usersService.getUsers(query);
-    return UserResponseDto.fromEntities(users);
+    @Query() query: QueryParamsUserDto & PaginationQueryDto,
+  ): Promise<UserResponseDto[] | PaginatedResponseDto<UserResponseDto>> {
+    // Check if pagination parameters are provided
+    const isPaginated = query.page !== undefined || query.limit !== undefined;
+
+    if (isPaginated) {
+      // Extract pagination options
+      const paginationOptions = {
+        page: query.page || 1,
+        limit: query.limit || 10,
+        sortBy: query.sortBy,
+        sortOrder: query.sortOrder,
+      };
+
+      // Extract filter options (exclude pagination fields)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { page, limit, sortBy, sortOrder, ...filterQuery } = query;
+      const whereQuery =
+        Object.keys(filterQuery).length > 0 ? filterQuery : undefined;
+
+      const paginatedResult = await this.usersService.getUsersPaginated(
+        paginationOptions,
+        whereQuery,
+      );
+      const userResponseDtos = UserResponseDto.fromEntities(
+        paginatedResult.data,
+      );
+
+      return PaginatedResponseDto.fromPaginatedResult({
+        ...paginatedResult,
+        data: userResponseDtos,
+      });
+    } else {
+      // Existing behavior for non-paginated requests
+      const users = await this.usersService.getUsers(query);
+      return UserResponseDto.fromEntities(users);
+    }
   }
 
   @Get('self')
