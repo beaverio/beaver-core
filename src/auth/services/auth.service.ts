@@ -24,7 +24,7 @@ export class AuthService implements IAuthService {
     private readonly sessionService: ISessionService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async verifyUser(email: string, password: string): Promise<User> {
     try {
@@ -69,9 +69,11 @@ export class AuthService implements IAuthService {
     const [existingUser] = await this.userService.getUsers({
       email: dto.email,
     });
+
     if (existingUser) {
       throw new BadRequestException('Email already exists');
     }
+
     return await this.userService.createUser(dto);
   }
 
@@ -79,17 +81,17 @@ export class AuthService implements IAuthService {
     const expirationAccessToken = new Date();
     expirationAccessToken.setSeconds(
       expirationAccessToken.getSeconds() +
-        parseInt(
-          this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION'),
-        ),
+      parseInt(
+        this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION'),
+      ),
     );
 
     const expirationRefreshToken = new Date();
     expirationRefreshToken.setSeconds(
       expirationRefreshToken.getSeconds() +
-        parseInt(
-          this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION'),
-        ),
+      parseInt(
+        this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION'),
+      ),
     );
 
     const payload: ITokenPayload = {

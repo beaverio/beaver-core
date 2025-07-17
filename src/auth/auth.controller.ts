@@ -6,6 +6,7 @@ import {
   Res,
   UseGuards,
   Req,
+  Get,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import {
@@ -24,7 +25,7 @@ export class AuthController {
   constructor(
     @Inject('IAuthService')
     private readonly authService: IAuthService,
-  ) {}
+  ) { }
 
   @Post('signup')
   async signUp(
@@ -91,7 +92,7 @@ export class AuthController {
   }
 
   @UseGuards(JWTAuthGuard)
-  @Post('sessions/count')
+  @Get('sessions/count')
   async getActiveSessionCount(@CurrentUser() user: User) {
     const count = await this.authService.getActiveSessionCount(user.id);
     return { activeSessionCount: count };

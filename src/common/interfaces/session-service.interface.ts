@@ -36,11 +36,6 @@ export interface ISessionService {
   revokeAllUserSessions(userId: string): Promise<void>;
 
   /**
-   * Clean up expired sessions
-   */
-  cleanupExpiredSessions(): Promise<void>;
-
-  /**
    * Get active session count for a user
    * @param userId User ID
    * @returns Promise resolving to number of active sessions

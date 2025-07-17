@@ -124,20 +124,6 @@ export class SessionService implements ISessionService {
     }
   }
 
-  cleanupExpiredSessions(): Promise<void> {
-    try {
-      // This is a simplified cleanup. In production, you might want to use Redis expiration
-      // or implement a more sophisticated cleanup strategy
-      this.logger.debug(
-        'Cleanup expired sessions - automatic expiration handles this',
-      );
-      return Promise.resolve();
-    } catch (error) {
-      this.logger.error('Error during session cleanup:', error);
-      return Promise.resolve();
-    }
-  }
-
   async getActiveSessionCount(userId: string): Promise<number> {
     try {
       const userSessionsKey = this.getUserSessionsKey(userId);
