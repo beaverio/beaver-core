@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaginateConfig } from 'nestjs-paginate';
+import { PaginateConfig, PaginationType } from 'nestjs-paginate';
 import { BasePaginatedRepository } from '../../../common/repositories/base-paginated.repository';
 import {
   CreateUserDto,
@@ -31,20 +31,22 @@ export class UserRepository
   }
 
   /**
-   * Get default pagination configuration for User entity
+   * Get default cursor pagination configuration for User entity
+   * Uses 'id' as the primary cursor field for consistent ordering
    */
   protected getDefaultPaginateConfig(): PaginateConfig<User> {
     return {
       defaultLimit: 50,
       maxLimit: 100,
       sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-      defaultSortBy: [['createdAt', 'DESC']],
+      defaultSortBy: [['id', 'ASC']], // Use 'id' for cursor pagination consistency
       searchableColumns: ['email'],
       filterableColumns: {
         email: true,
         id: true,
       },
       loadEagerRelations: false,
+      paginationType: PaginationType.CURSOR,
     };
   }
 

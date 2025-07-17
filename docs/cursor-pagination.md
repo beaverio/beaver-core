@@ -1,129 +1,159 @@
-# Cursor-Based Pagination Implementation
+# Cursor-Based Pagination with nestjs-paginate
 
-This document explains the custom cursor-based pagination implementation that replaces the previous `nestjs-paginate` library approach.
+This application uses cursor-based pagination implemented with the `nestjs-paginate` library for optimal performance and consistency.
 
 ## Overview
 
-Cursor-based pagination provides better performance and consistency for large datasets compared to offset-based pagination. It's particularly beneficial for high-volume entities like transactions where new records are frequently inserted.
+Cursor-based pagination provides better performance and consistency for large datasets compared to offset-based pagination. We use the `nestjs-paginate` library configured with `PaginationType.CURSOR` to achieve this.
 
-## Key Benefits
+## Why Cursor-Based Pagination?
 
-1. **Consistent Performance**: Query time remains constant regardless of dataset size
-2. **Real-time Consistency**: No "shifting results" when new records are added during pagination
-3. **Better Scalability**: Avoids the "deep offset" problem of traditional pagination
-4. **Previous Cursor Support**: Enables bidirectional navigation
+1. **Constant Performance**: O(1) query performance regardless of dataset size
+2. **No "Deep Offset" Problem**: Eliminates slow queries when paginating through large datasets
+3. **Consistency**: Results remain consistent even when data is being modified between requests
+4. **Ideal for Real-Time Data**: Perfect for entities like transactions where new records are frequently inserted
+
+## Implementation
+
+### Base Repository
+
+The `BasePaginatedRepository<T>` provides cursor-based pagination for all entities using `nestjs-paginate`:
+
+```typescript
+export abstract class BasePaginatedRepository<T extends ObjectLiteral>
+  implements IPaginatedRepository<T>
+{
+  async findPaginated(
+    query: PaginateQuery,
+    config?: PaginateConfig<T>,
+  ): Promise<Paginated<T>> {
+    const cursorConfig: PaginateConfig<T> = {
+      ...paginateConfig,
+      paginationType: PaginationType.CURSOR, // Forces cursor-based pagination
+    };
+    
+    return paginate(paginateQuery, this.repository, cursorConfig);
+  }
+}
+```
+
+### Entity Configuration
+
+Each entity repository extends the base class and defines its pagination configuration:
+
+```typescript
+export class UserRepository extends BasePaginatedRepository<User> {
+  protected getDefaultPaginateConfig(): PaginateConfig<User> {
+    return {
+      defaultLimit: 50,
+      maxLimit: 100,
+      sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
+      defaultSortBy: [['id', 'ASC']], // Consistent ordering for cursors
+      searchableColumns: ['email'],
+      filterableColumns: {
+        email: true,
+        id: true,
+      },
+      paginationType: PaginationType.CURSOR, // Enables cursor pagination
+    };
+  }
+}
+```
 
 ## API Usage
 
-### Basic Cursor Pagination
+### Initial Request (No Cursor)
 
 ```http
-GET /users?limit=10
-GET /users?limit=10&cursor=eyJjcmVhdGVkQXQiOiIyMDIzLTEyLTMxVDIzOjU5OjU5LjAwMFoifQ==
+GET /users?limit=10&sortBy=id:ASC
 ```
 
-### With Filtering and Sorting
-
-```http
-GET /users?limit=5&sortBy=email&sortOrder=ASC&email=test@example.com
-GET /users?limit=20&sortBy=createdAt&sortOrder=DESC&cursor=prev_cursor_value
-```
-
-### Explicit Cursor Endpoint
-
-```http
-GET /users/cursor?limit=10&cursor=next_cursor_value
-```
-
-## Response Format
-
+Response includes cursor for next page:
 ```json
 {
-  "data": [
-    {
-      "id": "uuid",
-      "email": "user@example.com",
-      "createdAt": "2025-01-17T20:24:53.000Z",
-      "updatedAt": "2025-01-17T20:24:53.000Z"
-    }
-  ],
-  "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI1LTAxLTE3VDIwOjI0OjUzLjAwMFoifQ==",
-  "prevCursor": "eyJjcmVhdGVkQXQiOiIyMDI1LTAxLTE3VDIwOjI0OjUyLjAwMFoifQ==",
-  "hasNext": true,
-  "hasPrevious": true
+  "data": [...],
+  "meta": {
+    "itemsPerPage": 10,
+    "cursor": "eyJpZCI6InVzZXItMTAifQ==",
+    "sortBy": [["id", "ASC"]],
+    ...
+  },
+  "links": {
+    "current": "/users?limit=10&sortBy=id:ASC",
+    "next": "/users?cursor=eyJpZCI6InVzZXItMTAifQ==&limit=10&sortBy=id:ASC"
+  }
 }
 ```
 
-## Implementation Details
+### Subsequent Requests (With Cursor)
 
-### Core Interfaces
-
-- **`ICursorPaginationOptions`**: Pagination parameters
-- **`ICursorPaginatedResult<T>`**: Response format with cursors
-- **`ICursorPaginatedRepository<T>`**: Repository interface extension
-
-### Cursor Encoding
-
-Cursors are base64-encoded values of the sort field (typically timestamps or IDs):
-
-```typescript
-// Encode
-const cursor = Buffer.from('2025-01-17T20:24:53.000Z').toString('base64');
-
-// Decode
-const decoded = Buffer.from(cursor, 'base64').toString('utf-8');
+```http
+GET /users?cursor=eyJpZCI6InVzZXItMTAifQ==&limit=10&sortBy=id:ASC
 ```
 
-### Query Building
+### Advanced Features with nestjs-paginate
 
-The implementation uses TypeORM QueryBuilder for efficient queries:
+#### Filtering with Cursor Pagination
+
+```http
+GET /users?filter.email=$eq:john@example.com&cursor=eyJpZCI6InVzZXItNX0=&limit=10
+```
+
+#### Search with Cursor Pagination
+
+```http
+GET /users?search=john&searchBy=email&cursor=eyJpZCI6InVzZXItNX0=&limit=10
+```
+
+#### Field Selection with Cursor Pagination
+
+```http
+GET /users?select=id,email&cursor=eyJpZCI6InVzZXItNX0=&limit=10
+```
+
+## Cursor Format
+
+Cursors are Base64-encoded JSON objects containing the values of the sort columns:
+- For `sortBy=id:ASC`, cursor might be: `{"id": "user-10"}`
+- For `sortBy=createdAt:DESC,id:ASC`, cursor might be: `{"createdAt": "2023-01-01T10:00:00Z", "id": "user-5"}`
+
+## Benefits for Future Entities
+
+This implementation provides a solid foundation for pagination across all future entities:
+
+### Transactions Entity (Future)
+
+When implementing a high-volume Transactions entity:
 
 ```typescript
-const queryBuilder = this.repo
-  .createQueryBuilder('user')
-  .select(['user.id', 'user.email', 'user.createdAt', 'user.updatedAt'])
-  .orderBy('user.createdAt', 'DESC');
-
-// Apply cursor filter
-if (cursor) {
-  queryBuilder.andWhere('user.createdAt < :cursorValue', { cursorValue: decodedCursor });
+export class TransactionRepository extends BasePaginatedRepository<Transaction> {
+  protected getDefaultPaginateConfig(): PaginateConfig<Transaction> {
+    return {
+      defaultLimit: 50,
+      maxLimit: 100,
+      sortableColumns: ['id', 'amount', 'createdAt', 'updatedAt', 'type', 'status'],
+      defaultSortBy: [['createdAt', 'DESC'], ['id', 'ASC']], // Time-based with tie-breaker
+      searchableColumns: ['description', 'reference'],
+      filterableColumns: {
+        amount: [FilterOperator.GTE, FilterOperator.LTE],
+        type: true,
+        status: true,
+        createdAt: [FilterOperator.GTE, FilterOperator.LTE],
+      },
+      paginationType: PaginationType.CURSOR,
+    };
+  }
 }
 ```
 
-### Bidirectional Navigation
+### Performance Characteristics
 
-- **Next Cursor**: Created from the last item in the current page
-- **Previous Cursor**: Created from the first item, with existence check via additional query
+- **First page**: Direct index lookup (very fast)
+- **Deep pagination**: Still fast, uses index on sort column
+- **Consistency**: Results don't shift when new data is inserted
+- **Scalability**: Performance remains constant with millions of records
 
-### Caching Strategy
-
-- **Result Caching**: Paginated results cached for 5 minutes with hash-based keys
-- **Individual Entity Caching**: Users from paginated results cached for future lookups
-- **Cache Invalidation**: Automatic clearing when data changes
-
-## Validation
-
-Query parameters are validated using class-validator:
-
-```typescript
-class CursorPaginationQueryDto {
-  @IsOptional()
-  @Type(() => Number)
-  @Min(1)
-  @Max(100)
-  limit?: number;
-
-  @IsOptional()
-  @IsString()
-  cursor?: string;
-
-  @IsOptional()
-  @IsIn(['ASC', 'DESC'])
-  sortOrder?: 'ASC' | 'DESC' = 'DESC';
-}
-```
-
-## Database Performance
+## Database Performance Comparison
 
 ### Traditional Offset Problems
 
@@ -144,31 +174,30 @@ ORDER BY created_at DESC
 LIMIT 20; -- Uses index seek
 ```
 
-## Backward Compatibility
+## Best Practices
 
-The implementation maintains full backward compatibility:
-- Non-paginated requests continue to work as before
-- Pagination is opt-in based on query parameters
-- Existing API consumers require no changes
+1. **Always include a unique column in sort order** (like `id`) as a tie-breaker
+2. **Use indexed columns for sorting** to ensure fast cursor queries
+3. **Set appropriate default limits** (50 for users, potentially different for other entities)
+4. **Consider time-based sorting** for chronological data like transactions
+5. **Test with large datasets** to verify performance characteristics
 
-## Future Extensions
+## Caching Integration
 
-This implementation can be easily extended to other entities:
-
-1. Create entity-specific repository implementing `ICursorPaginatedRepository<T>`
-2. Add cursor pagination methods to service layer
-3. Update controller to handle cursor query parameters
-4. Configure appropriate sortable columns and caching strategies
-
-### Recommended for Transactions Entity
+The pagination system integrates seamlessly with the existing caching layer:
 
 ```typescript
-export class TransactionRepository implements ICursorPaginatedRepository<Transaction> {
-  private readonly SORTABLE_COLUMNS = ['id', 'createdAt', 'amount', 'status'];
-  
-  async findAllCursor(options: ICursorPaginationOptions, where?: any): Promise<ICursorPaginatedResult<Transaction>> {
-    // Implementation optimized for high-volume transaction data
-    // Uses compound indexes on (user_id, created_at) for optimal performance
+export class UserRepository extends BasePaginatedRepository<User> {
+  async findPaginated(query: PaginateQuery): Promise<Paginated<User>> {
+    // Call nestjs-paginate with cursor configuration
+    const result = await super.findPaginated(query);
+    
+    // Cache individual entities from paginated results
+    for (const user of result.data) {
+      await this.cacheEntity(user);
+    }
+    
+    return result;
   }
 }
 ```
@@ -176,12 +205,25 @@ export class TransactionRepository implements ICursorPaginatedRepository<Transac
 ## Testing
 
 Comprehensive test coverage includes:
-- Cursor encoding/decoding
-- Query building with filters
-- Bidirectional navigation
-- Edge cases (empty results, invalid cursors)
-- Caching behavior
-- Repository integration
+- Cursor-based pagination logic
+- Configuration validation
+- Repository integration with nestjs-paginate
+- Mock handling for unit tests
 - Service and controller layers
 
-The pattern is especially recommended for high-volume entities like transactions, logs, or event streams where performance and consistency are critical.
+## Migration Benefits
+
+The migration to cursor-based pagination with `nestjs-paginate` provides:
+
+1. **Reduced Code Complexity**: Leverages a mature, tested library
+2. **Advanced Features**: Built-in filtering, searching, and field selection
+3. **Type Safety**: Full TypeScript support with proper interfaces
+4. **Maintainability**: Less custom code to maintain and debug
+5. **Performance**: Proven cursor-based pagination implementation
+
+## Backward Compatibility
+
+All existing API consumers continue to work without changes:
+- The enhancement is additive-only
+- No breaking changes to existing API contracts
+- Performance improves automatically for all pagination requests

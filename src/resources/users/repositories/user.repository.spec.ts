@@ -1,16 +1,27 @@
+// Mock nestjs-paginate
+jest.mock('nestjs-paginate', () => {
+  const originalModule = jest.requireActual('nestjs-paginate');
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return {
+    ...originalModule,
+    paginate: jest.fn(),
+  };
+});
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { Paginated, PaginateQuery } from 'nestjs-paginate';
+import {
+  Paginated,
+  PaginateQuery,
+  PaginationType,
+  paginate,
+} from 'nestjs-paginate';
 import { UserRepository } from './user.repository';
 import { User } from '../entities/user.entity';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 
-// Mock nestjs-paginate
-const mockPaginate = jest.fn();
-jest.mock('nestjs-paginate', () => ({
-  paginate: mockPaginate,
-}));
+const mockPaginate = paginate as jest.MockedFunction<typeof paginate>;
 
 describe('UserRepository', () => {
   let repository: UserRepository;
@@ -50,15 +61,16 @@ describe('UserRepository', () => {
       totalItems: 1,
       currentPage: 1,
       totalPages: 1,
-      sortBy: [['createdAt', 'DESC']],
+      sortBy: [['id', 'ASC']],
       searchBy: [],
       search: '',
       select: [],
       filter: {},
+      cursor: 'eyJpZCI6InRlc3QtaWQifQ==', // Base64 encoded cursor
     },
     links: {
       first: '?limit=50',
-      current: '?page=1&limit=50',
+      current: '?cursor=eyJpZCI6InRlc3QtaWQifQ==&limit=50',
       last: '?limit=50',
     },
   };
@@ -119,11 +131,11 @@ describe('UserRepository', () => {
   });
 
   describe('findPaginated', () => {
-    it('should return paginated users using nestjs-paginate', async () => {
+    it('should return paginated users using nestjs-paginate with cursor pagination', async () => {
       const query: PaginateQuery = {
-        page: 1,
         limit: 50,
-        sortBy: [['createdAt', 'DESC']],
+        cursor: 'eyJpZCI6InRlc3QtaWQifQ==',
+        sortBy: [['id', 'ASC']],
         searchBy: [],
         search: '',
         filter: {},
@@ -137,16 +149,22 @@ describe('UserRepository', () => {
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
         userRepository,
-        expect.any(Object),
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          defaultLimit: 50,
+          sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
+          defaultSortBy: [['id', 'ASC']],
+        }),
       );
       expect(result.data).toHaveLength(1);
       expect(result.meta.itemsPerPage).toBe(50);
+      expect(result.meta.cursor).toBeDefined();
     });
 
     it('should apply default limit when not provided', async () => {
       const query: PaginateQuery = {
-        page: 1,
-        sortBy: [['createdAt', 'DESC']],
+        cursor: 'eyJpZCI6InRlc3QtaWQifQ==',
+        sortBy: [['id', 'ASC']],
         searchBy: [],
         search: '',
         filter: {},
@@ -161,8 +179,34 @@ describe('UserRepository', () => {
       expect(mockPaginate).toHaveBeenCalledWith(
         expect.objectContaining({ limit: 50 }),
         userRepository,
-        expect.any(Object),
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+        }),
       );
+    });
+
+    it('should work without cursor for initial request', async () => {
+      const query: PaginateQuery = {
+        limit: 10,
+        sortBy: [['id', 'ASC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+        }),
+      );
+      expect(result.data).toHaveLength(1);
     });
   });
 

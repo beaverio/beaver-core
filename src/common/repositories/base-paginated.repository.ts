@@ -3,13 +3,14 @@ import {
   Paginated,
   PaginateQuery,
   PaginateConfig,
+  PaginationType,
   paginate,
 } from 'nestjs-paginate';
 import { IPaginatedRepository } from '../interfaces/paginated-repository.interface';
 
 /**
- * Base repository class that provides pagination functionality using nestjs-paginate
- * All entity repositories can extend this class for consistent pagination behavior
+ * Base repository class that provides cursor-based pagination functionality using nestjs-paginate
+ * All entity repositories can extend this class for consistent cursor pagination behavior
  */
 export abstract class BasePaginatedRepository<T extends ObjectLiteral>
   implements IPaginatedRepository<T>
@@ -19,14 +20,15 @@ export abstract class BasePaginatedRepository<T extends ObjectLiteral>
   /**
    * Get the default pagination configuration for this entity
    * Subclasses should override this to define entity-specific configuration
+   * Default configuration uses cursor-based pagination for better performance
    */
   protected abstract getDefaultPaginateConfig(): PaginateConfig<T>;
 
   /**
-   * Find entities with pagination support
+   * Find entities with cursor-based pagination support
    * @param query - Pagination query parameters from nestjs-paginate
    * @param config - Optional custom pagination configuration
-   * @returns Paginated result
+   * @returns Paginated result with cursor metadata
    */
   async findPaginated(
     query: PaginateQuery,
@@ -34,12 +36,18 @@ export abstract class BasePaginatedRepository<T extends ObjectLiteral>
   ): Promise<Paginated<T>> {
     const paginateConfig = config || this.getDefaultPaginateConfig();
 
+    // Ensure cursor-based pagination is configured
+    const cursorConfig: PaginateConfig<T> = {
+      ...paginateConfig,
+      paginationType: PaginationType.CURSOR,
+    };
+
     // Ensure default limit is applied if not provided
     const paginateQuery = {
       ...query,
-      limit: query.limit || paginateConfig.defaultLimit || 50,
+      limit: query.limit || cursorConfig.defaultLimit || 50,
     };
 
-    return paginate(paginateQuery, this.repository, paginateConfig);
+    return paginate(paginateQuery, this.repository, cursorConfig);
   }
 }
