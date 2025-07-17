@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { paginate, Paginated, PaginateQuery, PaginateConfig } from 'nestjs-paginate';
+import { paginate, Paginated, PaginateQuery, PaginateConfig, PaginationType } from 'nestjs-paginate';
 import {
   CreateUserDto,
   QueryParamsUserDto,
@@ -32,6 +32,25 @@ export class UserRepository implements IUserRepository {
     },
     defaultLimit: 10,
     maxLimit: 100,
+    // Use offset-based pagination by default for backward compatibility
+    paginationType: PaginationType.TAKE_AND_SKIP,
+  };
+
+  // Cursor-based pagination config for high-performance scenarios (e.g., transactions)
+  private readonly cursorPaginateConfig: PaginateConfig<User> = {
+    sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
+    nullSort: 'last',
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['email'],
+    select: ['id', 'email', 'createdAt', 'updatedAt'],
+    filterableColumns: {
+      email: true,
+      id: true,
+    },
+    defaultLimit: 10,
+    maxLimit: 100,
+    // Use cursor-based pagination for better performance with large datasets
+    paginationType: PaginationType.CURSOR,
   };
 
   constructor(
@@ -69,6 +88,10 @@ export class UserRepository implements IUserRepository {
   }
 
   async findAllPaginated(query: PaginateQuery): Promise<Paginated<User>> {
+    // Choose pagination config based on query parameters
+    // Use cursor-based pagination if cursor parameter is present
+    const config = query.cursor ? this.cursorPaginateConfig : this.paginateConfig;
+    
     // Generate cache key for paginated results
     const cacheKey = this.getPaginatedCacheKey(query);
 
@@ -80,7 +103,40 @@ export class UserRepository implements IUserRepository {
     }
 
     // Cache miss - fetch from database using nestjs-paginate
-    const result = await paginate(query, this.repo, this.paginateConfig);
+    const result = await paginate(query, this.repo, config);
+
+    // Cache the result
+    await this.cacheService.set(cacheKey, result, this.PAGINATED_CACHE_TTL);
+
+    // Also cache individual users for future lookups
+    for (const user of result.data) {
+      await this.cacheEntity(user);
+    }
+
+    const paginationType = query.cursor ? 'cursor-based' : 'offset-based';
+    this.logger.debug(
+      `Found ${result.data.length} users using ${paginationType} pagination (page ${result.meta.currentPage}/${result.meta.totalPages}), cached result`,
+    );
+    return result;
+  }
+
+  /**
+   * Alternative method for explicit cursor-based pagination
+   * Useful for high-volume scenarios like future Transactions entity
+   */
+  async findAllCursorPaginated(query: PaginateQuery): Promise<Paginated<User>> {
+    // Generate cache key for cursor-paginated results
+    const cacheKey = this.getPaginatedCacheKey(query, 'cursor');
+
+    // Try cache first
+    const cachedResult = await this.cacheService.get<Paginated<User>>(cacheKey);
+    if (cachedResult) {
+      this.logger.debug(`Cache hit for cursor-paginated users: ${cacheKey}`);
+      return cachedResult;
+    }
+
+    // Cache miss - fetch using cursor-based pagination
+    const result = await paginate(query, this.repo, this.cursorPaginateConfig);
 
     // Cache the result
     await this.cacheService.set(cacheKey, result, this.PAGINATED_CACHE_TTL);
@@ -91,7 +147,7 @@ export class UserRepository implements IUserRepository {
     }
 
     this.logger.debug(
-      `Found ${result.data.length} users (page ${result.meta.currentPage}/${result.meta.totalPages}), cached result`,
+      `Found ${result.data.length} users using cursor-based pagination, cached result`,
     );
     return result;
   }
@@ -215,22 +271,24 @@ export class UserRepository implements IUserRepository {
   /**
    * Generate cache key for paginated results using nestjs-paginate query
    */
-  getPaginatedCacheKey(query: PaginateQuery): string {
-    const queryHash = this.generateQueryHash(query);
+  getPaginatedCacheKey(query: PaginateQuery, type?: string): string {
+    const queryHash = this.generateQueryHash(query, type);
     return `${this.PAGINATED_CACHE_PREFIX}${queryHash}`;
   }
 
   /**
    * Generate a hash for query to use in cache keys
    */
-  private generateQueryHash(query: PaginateQuery): string {
+  private generateQueryHash(query: PaginateQuery, type?: string): string {
     const queryString = JSON.stringify({
+      type: type || (query.cursor ? 'cursor' : 'offset'),
       page: query.page,
       limit: query.limit,
       sortBy: query.sortBy,
       search: query.search,
       filter: query.filter,
       select: query.select,
+      cursor: query.cursor,
     });
     return crypto
       .createHash('md5')

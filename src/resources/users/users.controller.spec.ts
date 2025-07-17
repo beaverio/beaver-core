@@ -5,9 +5,24 @@ import { UsersController } from './users.controller';
 describe('UsersController', () => {
   let controller: UsersController;
 
+  const mockUser = {
+    id: 'test-id',
+    email: 'test@example.com',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const mockUserDto = {
+    id: 'test-id',
+    email: 'test@example.com',
+    createdAt: mockUser.createdAt,
+    updatedAt: mockUser.updatedAt,
+  };
+
   const mockUserService = {
     getUsers: jest.fn(),
     getUsersPaginated: jest.fn(),
+    getUsersCursorPaginated: jest.fn(),
     getUser: jest.fn(),
     updateUser: jest.fn(),
     createUser: jest.fn(),
@@ -37,13 +52,6 @@ describe('UsersController', () => {
   });
 
   describe('getUsers', () => {
-    const mockUser = {
-      id: 'test-id',
-      email: 'test@example.com',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
     it('should return non-paginated users when no pagination params are provided', async () => {
       const query = { email: 'test@example.com' };
       const paginateQuery: PaginateQuery = { path: '/users' }; // No page/limit means non-paginated
@@ -149,6 +157,41 @@ describe('UsersController', () => {
       await controller.getUsers(query, paginateQuery);
 
       expect(mockUserService.getUsersPaginated).toHaveBeenCalledWith(paginateQuery);
+    });
+  });
+
+  describe('getUsersCursor', () => {
+    it('should return cursor-paginated users', async () => {
+      const paginateQuery: PaginateQuery = {
+        cursor: 'V001671444000000',
+        limit: 10,
+        sortBy: [['createdAt', 'DESC'] as [string, string]],
+        path: '/users/cursor',
+      };
+
+      const paginatedResult = {
+        data: [mockUser],
+        meta: {
+          itemsPerPage: 10,
+          cursor: 'V001671444000000',
+          sortBy: [['createdAt', 'DESC']],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users/cursor?cursor=V001671444000000&limit=10',
+          next: '/users/cursor?cursor=V001671444000001&limit=10',
+        },
+      };
+      mockUserService.getUsersCursorPaginated.mockResolvedValue(paginatedResult);
+
+      const result = await controller.getUsersCursor(paginateQuery);
+
+      expect(mockUserService.getUsersCursorPaginated).toHaveBeenCalledWith(paginateQuery);
+      expect(result.data).toBeDefined();
+      expect(result.meta).toEqual(paginatedResult.meta);
+      expect(result.links).toEqual(paginatedResult.links);
     });
   });
 });

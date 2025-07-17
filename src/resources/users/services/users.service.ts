@@ -32,6 +32,10 @@ export class UsersService implements IUserService {
     return await this.userRepository.findAllPaginated(query);
   }
 
+  async getUsersCursorPaginated(query: PaginateQuery): Promise<Paginated<User>> {
+    return await this.userRepository.findAllCursorPaginated(query);
+  }
+
   async getUser(query: QueryParamsUserDto): Promise<User> {
     const user = await this.userRepository.findOne(query);
 

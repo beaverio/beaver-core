@@ -32,10 +32,11 @@ export class UsersController {
     @Paginate() paginateQuery: PaginateQuery,
   ): Promise<UserResponseDto[] | any> {
     // Check if pagination parameters are provided
-    const isPaginated = paginateQuery.page !== undefined || paginateQuery.limit !== undefined;
+    const isPaginated = paginateQuery.page !== undefined || paginateQuery.limit !== undefined || paginateQuery.cursor !== undefined;
 
     if (isPaginated) {
       // Use nestjs-paginate for paginated requests
+      // Automatically chooses between offset-based and cursor-based pagination
       const paginatedResult = await this.usersService.getUsersPaginated(paginateQuery);
       
       // Transform User entities to UserResponseDto
@@ -51,6 +52,24 @@ export class UsersController {
       const users = await this.usersService.getUsers(query);
       return UserResponseDto.fromEntities(users);
     }
+  }
+
+  @Get('cursor')
+  async getUsersCursor(
+    @Paginate() paginateQuery: PaginateQuery,
+  ): Promise<any> {
+    // Explicit cursor-based pagination endpoint for demonstration
+    // This shows how cursor pagination would work for high-volume entities like Transactions
+    const paginatedResult = await this.usersService.getUsersCursorPaginated(paginateQuery);
+    
+    // Transform User entities to UserResponseDto
+    const transformedData = UserResponseDto.fromEntities(paginatedResult.data);
+    
+    // Return the result with transformed data
+    return {
+      ...paginatedResult,
+      data: transformedData,
+    };
   }
 
   @Get('self')

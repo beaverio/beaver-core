@@ -9,6 +9,11 @@ import { ICacheService } from '../../../common/interfaces/cache-service.interfac
 // Mock the paginate function
 jest.mock('nestjs-paginate', () => ({
   paginate: jest.fn(),
+  PaginationType: {
+    TAKE_AND_SKIP: 'take',
+    LIMIT_AND_OFFSET: 'limit',
+    CURSOR: 'cursor',
+  },
 }));
 
 describe('UserRepository', () => {
@@ -303,6 +308,87 @@ describe('UserRepository', () => {
             id: true,
           },
         }),
+      );
+      expect(result).toBe(paginatedResult);
+    });
+  });
+
+  describe('findAllCursorPaginated', () => {
+    it('should return cached cursor-paginated result if available', async () => {
+      const query: PaginateQuery = {
+        cursor: 'V001671444000000',
+        limit: 10,
+        sortBy: [['createdAt', 'DESC'] as [string, string]],
+        path: '/users',
+      };
+      
+      const cachedResult = {
+        data: [mockUser],
+        meta: {
+          itemsPerPage: 10,
+          cursor: 'V001671444000000',
+          sortBy: [['createdAt', 'DESC']],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?cursor=V001671444000000&limit=10',
+          next: '/users?cursor=V001671444000001&limit=10',
+        },
+      };
+
+      cacheService.get.mockResolvedValue(cachedResult);
+
+      const result = await repository.findAllCursorPaginated(query);
+
+      expect(cacheService.get).toHaveBeenCalledWith(
+        expect.stringContaining('user:paginated:'),
+      );
+      expect(result).toBe(cachedResult);
+    });
+
+    it('should fetch from database using cursor-based pagination when cache miss', async () => {
+      const query: PaginateQuery = {
+        cursor: 'V001671444000000',
+        limit: 5,
+        sortBy: [['createdAt', 'DESC'] as [string, string]],
+        path: '/users',
+      };
+
+      const paginatedResult = {
+        data: [mockUser],
+        meta: {
+          itemsPerPage: 5,
+          cursor: 'V001671444000000',
+          sortBy: [['createdAt', 'DESC']],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?cursor=V001671444000000&limit=5',
+          next: '/users?cursor=V001671444000001&limit=5',
+        },
+      };
+
+      cacheService.get.mockResolvedValue(null);
+      (paginate as jest.Mock).mockResolvedValue(paginatedResult);
+
+      const result = await repository.findAllCursorPaginated(query);
+
+      expect(paginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: 'cursor', // Ensure cursor-based pagination config is used
+          sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
+        }),
+      );
+      expect(cacheService.set).toHaveBeenCalledWith(
+        expect.stringContaining('user:paginated:'),
+        paginatedResult,
+        5 * 60 * 1000, // 5 minutes TTL
       );
       expect(result).toBe(paginatedResult);
     });

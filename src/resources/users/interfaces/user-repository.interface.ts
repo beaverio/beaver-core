@@ -11,6 +11,7 @@ export interface IUserRepository extends ICacheableRepository<User> {
   create(dto: CreateUserDto): Promise<User>;
   findAll(query: QueryParamsUserDto): Promise<User[]>;
   findAllPaginated(query: PaginateQuery): Promise<Paginated<User>>;
+  findAllCursorPaginated(query: PaginateQuery): Promise<Paginated<User>>;
   findOne(query: QueryParamsUserDto): Promise<User | null>;
   update(id: string, dto: UpdateUserDto): Promise<User>;
 }
