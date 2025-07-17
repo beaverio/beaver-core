@@ -21,4 +21,4 @@ import { CommonModule } from '../../common/common.module';
   ],
   exports: ['IUserService'],
 })
-export class UsersModule { }
+export class UsersModule {}

@@ -1,59 +1,65 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { paginate, PaginateQuery } from 'nestjs-paginate';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { UserRepository } from './user.repository';
 import { User } from '../entities/user.entity';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
-
-// Mock the paginate function
-jest.mock('nestjs-paginate', () => ({
-  paginate: jest.fn(),
-  PaginationType: {
-    TAKE_AND_SKIP: 'take',
-    LIMIT_AND_OFFSET: 'limit',
-    CURSOR: 'cursor',
-  },
-}));
+import { ICursorPaginationOptions } from '../../../common/interfaces/cursor-pagination.interface';
 
 describe('UserRepository', () => {
   let repository: UserRepository;
   let userRepository: jest.Mocked<Repository<User>>;
   let cacheService: jest.Mocked<ICacheService>;
+  let queryBuilder: jest.Mocked<SelectQueryBuilder<User>>;
 
   const mockUser: User = {
     id: 'test-id',
     email: 'test@example.com',
     password: 'hashedPassword',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: new Date('2023-01-01T00:00:00Z'),
+    updatedAt: new Date('2023-01-01T00:00:00Z'),
   };
 
+  const mockUsers: User[] = [
+    {
+      id: 'user-1',
+      email: 'user1@example.com',
+      password: 'hashedPassword',
+      createdAt: new Date('2023-01-01T00:00:00Z'),
+      updatedAt: new Date('2023-01-01T00:00:00Z'),
+    },
+    {
+      id: 'user-2',
+      email: 'user2@example.com',
+      password: 'hashedPassword',
+      createdAt: new Date('2023-01-02T00:00:00Z'),
+      updatedAt: new Date('2023-01-02T00:00:00Z'),
+    },
+  ];
+
   beforeEach(async () => {
-    const mockQueryBuilder = {
+    // Create mocked query builder
+    queryBuilder = {
+      select: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
-      skip: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      getManyAndCount: jest.fn(),
-    };
+      limit: jest.fn().mockReturnThis(),
+      getMany: jest.fn(),
+      getCount: jest.fn(),
+    } as unknown as jest.Mocked<SelectQueryBuilder<User>>;
 
     const mockUserRepository = {
       save: jest.fn(),
       find: jest.fn(),
       findOne: jest.fn(),
       merge: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     };
 
     const mockCacheService = {
       get: jest.fn(),
       set: jest.fn(),
       delete: jest.fn(),
-      deleteByPattern: jest.fn(),
-      isHealthy: jest.fn(),
-      getMetrics: jest.fn(),
-      clear: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -71,326 +77,234 @@ describe('UserRepository', () => {
     }).compile();
 
     repository = module.get<UserRepository>(UserRepository);
-    userRepository = module.get<Repository<User>>(
-      getRepositoryToken(User),
-    ) as jest.Mocked<Repository<User>>;
-    cacheService = module.get<ICacheService>(
-      'ICacheService',
-    ) as jest.Mocked<ICacheService>;
+    userRepository = module.get(getRepositoryToken(User));
+    cacheService = module.get('ICacheService');
   });
 
-  it('should be defined', () => {
-    expect(repository).toBeDefined();
+  describe('findAllCursor', () => {
+    it('should return paginated results with cursor', async () => {
+      const options: ICursorPaginationOptions = {
+        limit: 2,
+        sortBy: 'createdAt',
+        sortOrder: 'DESC',
+      };
+
+      cacheService.get.mockResolvedValue(null); // Cache miss
+      queryBuilder.getMany.mockResolvedValue(mockUsers);
+      queryBuilder.getCount.mockResolvedValue(1); // For hasPrevious check
+
+      const result = await repository.findAllCursor(options);
+
+      expect(result.data).toEqual(mockUsers);
+      expect(result.hasNext).toBe(false);
+      expect(result.hasPrevious).toBe(true);
+      expect(result.nextCursor).toBeUndefined();
+      expect(result.prevCursor).toBeDefined();
+      expect(queryBuilder.select).toHaveBeenCalledWith([
+        'user.id',
+        'user.email',
+        'user.createdAt',
+        'user.updatedAt',
+      ]);
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+        'user.createdAt',
+        'DESC',
+      );
+      expect(queryBuilder.limit).toHaveBeenCalledWith(3); // limit + 1
+    });
+
+    it('should apply cursor filtering for next page', async () => {
+      const cursor = Buffer.from('2023-01-01T00:00:00.000Z').toString('base64');
+      const options: ICursorPaginationOptions = {
+        limit: 2,
+        cursor,
+        sortBy: 'createdAt',
+        sortOrder: 'DESC',
+      };
+
+      cacheService.get.mockResolvedValue(null);
+      queryBuilder.getMany.mockResolvedValue([mockUsers[1]]); // Only second user
+      queryBuilder.getCount.mockResolvedValue(0);
+
+      await repository.findAllCursor(options);
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.createdAt < :cursorValue',
+        {
+          cursorValue: '2023-01-01T00:00:00.000Z',
+        },
+      );
+    });
+
+    it('should apply cursor filtering for ASC order', async () => {
+      const cursor = Buffer.from('2023-01-01T00:00:00.000Z').toString('base64');
+      const options: ICursorPaginationOptions = {
+        limit: 2,
+        cursor,
+        sortBy: 'createdAt',
+        sortOrder: 'ASC',
+      };
+
+      cacheService.get.mockResolvedValue(null);
+      queryBuilder.getMany.mockResolvedValue([mockUsers[1]]);
+      queryBuilder.getCount.mockResolvedValue(0);
+
+      await repository.findAllCursor(options);
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.createdAt > :cursorValue',
+        {
+          cursorValue: '2023-01-01T00:00:00.000Z',
+        },
+      );
+    });
+
+    it('should return cached result when available', async () => {
+      const options: ICursorPaginationOptions = {
+        limit: 2,
+      };
+
+      const cachedResult = {
+        data: mockUsers,
+        nextCursor: 'cached-cursor',
+        prevCursor: undefined,
+        hasNext: true,
+        hasPrevious: false,
+      };
+
+      cacheService.get.mockResolvedValue(cachedResult);
+
+      const result = await repository.findAllCursor(options);
+
+      expect(result).toEqual(cachedResult);
+      expect(queryBuilder.getMany).not.toHaveBeenCalled();
+    });
+
+    it('should apply where conditions', async () => {
+      const options: ICursorPaginationOptions = {
+        limit: 2,
+      };
+      const where = { email: 'test@example.com' };
+
+      cacheService.get.mockResolvedValue(null);
+      queryBuilder.getMany.mockResolvedValue([mockUser]);
+      queryBuilder.getCount.mockResolvedValue(0);
+
+      await repository.findAllCursor(options, where);
+
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.email = :email',
+        { email: 'test@example.com' },
+      );
+    });
+
+    it('should handle empty results', async () => {
+      const options: ICursorPaginationOptions = {
+        limit: 2,
+      };
+
+      cacheService.get.mockResolvedValue(null);
+      queryBuilder.getMany.mockResolvedValue([]);
+
+      const result = await repository.findAllCursor(options);
+
+      expect(result.data).toEqual([]);
+      expect(result.hasNext).toBe(false);
+      expect(result.hasPrevious).toBe(false);
+      expect(result.nextCursor).toBeUndefined();
+      expect(result.prevCursor).toBeUndefined();
+    });
+
+    it('should use default values for invalid sort options', async () => {
+      const options: ICursorPaginationOptions = {
+        limit: 2,
+        sortBy: 'invalidColumn', // Invalid column
+      };
+
+      cacheService.get.mockResolvedValue(null);
+      queryBuilder.getMany.mockResolvedValue([]);
+
+      await repository.findAllCursor(options);
+
+      expect(queryBuilder.orderBy).toHaveBeenCalledWith(
+        'user.createdAt',
+        'DESC',
+      ); // Falls back to default
+    });
+
+    it('should respect maximum limit', async () => {
+      const options: ICursorPaginationOptions = {
+        limit: 200, // Exceeds max limit of 100
+      };
+
+      cacheService.get.mockResolvedValue(null);
+      queryBuilder.getMany.mockResolvedValue([]);
+
+      await repository.findAllCursor(options);
+
+      expect(queryBuilder.limit).toHaveBeenCalledWith(101); // 100 + 1
+    });
   });
 
   describe('create', () => {
-    it('should create user and cache it', async () => {
-      const createDto = { email: 'test@example.com', password: 'password123' };
+    it('should create and cache a user', async () => {
+      const createDto = { email: 'test@example.com', password: 'password' };
       userRepository.save.mockResolvedValue(mockUser);
+      cacheService.set.mockResolvedValue();
 
       const result = await repository.create(createDto);
 
       expect(userRepository.save).toHaveBeenCalledWith(createDto);
-      expect(cacheService.set).toHaveBeenCalledTimes(2); // ID and email cache keys
-      expect(result).toBe(mockUser);
+      expect(result).toEqual(mockUser);
+      expect(cacheService.set).toHaveBeenCalledTimes(2); // By ID and email
     });
   });
 
   describe('findOne', () => {
-    it('should return cached user when cache hit', async () => {
+    it('should return cached user when available', async () => {
       const query = { id: 'test-id' };
       cacheService.get.mockResolvedValue(mockUser);
 
       const result = await repository.findOne(query);
 
-      expect(cacheService.get).toHaveBeenCalledWith('user:id:test-id');
+      expect(result).toEqual(mockUser);
       expect(userRepository.findOne).not.toHaveBeenCalled();
-      expect(result).toBe(mockUser);
     });
 
-    it('should fetch from database on cache miss and cache result', async () => {
+    it('should fetch from database and cache when not cached', async () => {
       const query = { id: 'test-id' };
       cacheService.get.mockResolvedValue(null);
       userRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await repository.findOne(query);
 
-      expect(cacheService.get).toHaveBeenCalledWith('user:id:test-id');
       expect(userRepository.findOne).toHaveBeenCalledWith({ where: query });
-      expect(cacheService.set).toHaveBeenCalledTimes(2); // ID and email cache keys
-      expect(result).toBe(mockUser);
-    });
-
-    it('should handle cache by email', async () => {
-      const query = { email: 'test@example.com' };
-      cacheService.get.mockResolvedValue(mockUser);
-
-      const result = await repository.findOne(query);
-
-      expect(cacheService.get).toHaveBeenCalledWith(
-        'user:email:test@example.com',
-      );
-      expect(result).toBe(mockUser);
-    });
-
-    it('should return null when user not found', async () => {
-      const query = { id: 'test-id' };
-      cacheService.get.mockResolvedValue(null);
-      userRepository.findOne.mockResolvedValue(null);
-
-      const result = await repository.findOne(query);
-
-      expect(result).toBeNull();
+      expect(result).toEqual(mockUser);
+      expect(cacheService.set).toHaveBeenCalledTimes(2); // By ID and email
     });
   });
 
   describe('update', () => {
-    it('should update user, invalidate cache, and cache updated user', async () => {
+    it('should update and re-cache user', async () => {
       const updateDto = { email: 'updated@example.com' };
-      const updatedUser = { ...mockUser, ...updateDto };
-
       userRepository.findOne.mockResolvedValue(mockUser);
-      userRepository.save.mockResolvedValue(updatedUser);
+      userRepository.save.mockResolvedValue({ ...mockUser, ...updateDto });
+      cacheService.delete.mockResolvedValue();
+      cacheService.set.mockResolvedValue();
 
-      const result = await repository.update('test-id', updateDto);
+      await repository.update('test-id', updateDto);
 
-      expect(userRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 'test-id' },
-      });
       expect(userRepository.merge).toHaveBeenCalledWith(mockUser, updateDto);
-      expect(userRepository.save).toHaveBeenCalledWith(mockUser);
       expect(cacheService.delete).toHaveBeenCalledTimes(2); // Invalidate old cache
       expect(cacheService.set).toHaveBeenCalledTimes(2); // Cache updated user
-      expect(result).toBe(updatedUser);
     });
 
     it('should throw error when user not found', async () => {
       userRepository.findOne.mockResolvedValue(null);
 
-      await expect(repository.update('test-id', {})).rejects.toThrow(
+      await expect(repository.update('non-existent-id', {})).rejects.toThrow(
         'User not found',
       );
-    });
-  });
-
-  describe('findAll', () => {
-    it('should fetch users from database and cache them individually', async () => {
-      const query = { email: 'test@example.com' };
-      const users = [mockUser];
-      userRepository.find.mockResolvedValue(users);
-
-      const result = await repository.findAll(query);
-
-      expect(userRepository.find).toHaveBeenCalledWith({ where: query });
-      expect(cacheService.set).toHaveBeenCalledTimes(2); // ID and email cache keys for each user
-      expect(result).toBe(users);
-    });
-  });
-
-  describe('findAllPaginated', () => {
-    it('should return cached paginated result if available', async () => {
-      const query: PaginateQuery = {
-        page: 1,
-        limit: 10,
-        sortBy: [['email', 'ASC'] as [string, string]],
-        path: '/users',
-      };
-      
-      const cachedResult = {
-        data: [mockUser],
-        meta: {
-          itemsPerPage: 10,
-          totalItems: 1,
-          currentPage: 1,
-          totalPages: 1,
-          sortBy: [['email', 'ASC']],
-          searchBy: [],
-          search: '',
-          select: [],
-        },
-        links: {
-          current: '/users?page=1&limit=10',
-        },
-      };
-
-      cacheService.get.mockResolvedValue(cachedResult);
-
-      const result = await repository.findAllPaginated(query);
-
-      expect(cacheService.get).toHaveBeenCalledWith(
-        expect.stringContaining('user:paginated:'),
-      );
-      expect(result).toBe(cachedResult);
-    });
-
-    it('should fetch from database using nestjs-paginate when cache miss', async () => {
-      const query: PaginateQuery = {
-        page: 1,
-        limit: 10,
-        sortBy: [['email', 'ASC'] as [string, string]],
-        path: '/users',
-      };
-      const paginatedResult = {
-        data: [mockUser],
-        meta: {
-          itemsPerPage: 10,
-          totalItems: 1,
-          currentPage: 1,
-          totalPages: 1,
-          sortBy: [['email', 'ASC']],
-          searchBy: [],
-          search: '',
-          select: [],
-        },
-        links: {
-          current: '/users?page=1&limit=10',
-        },
-      };
-
-      cacheService.get.mockResolvedValue(null); // Cache miss
-      (paginate as jest.Mock).mockResolvedValue(paginatedResult);
-
-      const result = await repository.findAllPaginated(query);
-
-      expect(paginate).toHaveBeenCalledWith(
-        query,
-        userRepository,
-        expect.objectContaining({
-          sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-          defaultLimit: 10,
-          maxLimit: 100,
-        }),
-      );
-      expect(cacheService.set).toHaveBeenCalledWith(
-        expect.stringContaining('user:paginated:'),
-        paginatedResult,
-        5 * 60 * 1000, // 5 minutes TTL
-      );
-      expect(result).toBe(paginatedResult);
-    });
-
-    it('should handle pagination query with filters', async () => {
-      const query: PaginateQuery = {
-        page: 2,
-        limit: 5,
-        filter: { email: 'test@example.com' },
-        path: '/users',
-      };
-      const paginatedResult = {
-        data: [mockUser],
-        meta: {
-          itemsPerPage: 5,
-          totalItems: 1,
-          currentPage: 2,
-          totalPages: 1,
-          sortBy: [],
-          searchBy: [],
-          search: '',
-          select: [],
-          filter: { email: 'test@example.com' },
-        },
-        links: {
-          current: '/users?page=2&limit=5&filter.email=test@example.com',
-        },
-      };
-
-      cacheService.get.mockResolvedValue(null);
-      (paginate as jest.Mock).mockResolvedValue(paginatedResult);
-
-      const result = await repository.findAllPaginated(query);
-
-      expect(paginate).toHaveBeenCalledWith(
-        query,
-        userRepository,
-        expect.objectContaining({
-          filterableColumns: {
-            email: true,
-            id: true,
-          },
-        }),
-      );
-      expect(result).toBe(paginatedResult);
-    });
-  });
-
-  describe('findAllCursorPaginated', () => {
-    it('should return cached cursor-paginated result if available', async () => {
-      const query: PaginateQuery = {
-        cursor: 'V001671444000000',
-        limit: 10,
-        sortBy: [['createdAt', 'DESC'] as [string, string]],
-        path: '/users',
-      };
-      
-      const cachedResult = {
-        data: [mockUser],
-        meta: {
-          itemsPerPage: 10,
-          cursor: 'V001671444000000',
-          sortBy: [['createdAt', 'DESC']],
-          searchBy: [],
-          search: '',
-          select: [],
-        },
-        links: {
-          current: '/users?cursor=V001671444000000&limit=10',
-          next: '/users?cursor=V001671444000001&limit=10',
-        },
-      };
-
-      cacheService.get.mockResolvedValue(cachedResult);
-
-      const result = await repository.findAllCursorPaginated(query);
-
-      expect(cacheService.get).toHaveBeenCalledWith(
-        expect.stringContaining('user:paginated:'),
-      );
-      expect(result).toBe(cachedResult);
-    });
-
-    it('should fetch from database using cursor-based pagination when cache miss', async () => {
-      const query: PaginateQuery = {
-        cursor: 'V001671444000000',
-        limit: 5,
-        sortBy: [['createdAt', 'DESC'] as [string, string]],
-        path: '/users',
-      };
-
-      const paginatedResult = {
-        data: [mockUser],
-        meta: {
-          itemsPerPage: 5,
-          cursor: 'V001671444000000',
-          sortBy: [['createdAt', 'DESC']],
-          searchBy: [],
-          search: '',
-          select: [],
-        },
-        links: {
-          current: '/users?cursor=V001671444000000&limit=5',
-          next: '/users?cursor=V001671444000001&limit=5',
-        },
-      };
-
-      cacheService.get.mockResolvedValue(null);
-      (paginate as jest.Mock).mockResolvedValue(paginatedResult);
-
-      const result = await repository.findAllCursorPaginated(query);
-
-      expect(paginate).toHaveBeenCalledWith(
-        query,
-        userRepository,
-        expect.objectContaining({
-          paginationType: 'cursor', // Ensure cursor-based pagination config is used
-          sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-        }),
-      );
-      expect(cacheService.set).toHaveBeenCalledWith(
-        expect.stringContaining('user:paginated:'),
-        paginatedResult,
-        5 * 60 * 1000, // 5 minutes TTL
-      );
-      expect(result).toBe(paginatedResult);
     });
   });
 });

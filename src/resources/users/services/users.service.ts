@@ -1,6 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { hash } from 'bcryptjs';
-import { PaginateQuery, Paginated } from 'nestjs-paginate';
+import {
+  ICursorPaginationOptions,
+  ICursorPaginatedResult,
+} from 'src/common/interfaces/cursor-pagination.interface';
 import {
   CreateUserDto,
   QueryParamsUserDto,
@@ -28,12 +31,11 @@ export class UsersService implements IUserService {
     return await this.userRepository.findAll(query);
   }
 
-  async getUsersPaginated(query: PaginateQuery): Promise<Paginated<User>> {
-    return await this.userRepository.findAllPaginated(query);
-  }
-
-  async getUsersCursorPaginated(query: PaginateQuery): Promise<Paginated<User>> {
-    return await this.userRepository.findAllCursorPaginated(query);
+  async getUsersCursor(
+    options: ICursorPaginationOptions,
+    query?: QueryParamsUserDto,
+  ): Promise<ICursorPaginatedResult<User>> {
+    return await this.userRepository.findAllCursor(options, query);
   }
 
   async getUser(query: QueryParamsUserDto): Promise<User> {

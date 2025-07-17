@@ -1,5 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PaginateQuery, Paginated } from 'nestjs-paginate';
+import {
+  ICursorPaginationOptions,
+  ICursorPaginatedResult,
+} from 'src/common/interfaces/cursor-pagination.interface';
 import { UsersService } from './users.service';
 import { User } from '../entities/user.entity';
 
@@ -19,8 +22,7 @@ describe('UsersService', () => {
     findAll: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
-    findAllPaginated: jest.fn(),
-    findAllCursorPaginated: jest.fn(),
+    findAllCursor: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -41,101 +43,53 @@ describe('UsersService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('getUsersPaginated', () => {
-    it('should call repository findAllPaginated method', async () => {
-      const query: PaginateQuery = {
-        page: 1,
+  describe('getUsersCursor', () => {
+    it('should call repository findAllCursor method', async () => {
+      const options: ICursorPaginationOptions = {
         limit: 10,
-        sortBy: [['email', 'ASC'] as [string, string]],
-        path: '/users',
+        sortBy: 'email',
+        sortOrder: 'ASC',
       };
-      const expectedResult = {
-        data: [],
-        meta: {
-          itemsPerPage: 10,
-          totalItems: 0,
-          currentPage: 1,
-          totalPages: 0,
-          sortBy: [['email', 'ASC']],
-          searchBy: [],
-          search: '',
-          select: [],
-        },
-        links: {
-          current: '/users?page=1&limit=10',
-        },
-      };
-
-      mockUserRepository.findAllPaginated.mockResolvedValue(expectedResult);
-
-      const result = await service.getUsersPaginated(query);
-
-      expect(mockUserRepository.findAllPaginated).toHaveBeenCalledWith(query);
-      expect(result).toBe(expectedResult);
-    });
-
-    it('should call repository findAllPaginated without optional parameters', async () => {
-      const query: PaginateQuery = {
-        page: 1,
-        limit: 10,
-        path: '/users',
-      };
-      const expectedResult = {
-        data: [],
-        meta: {
-          itemsPerPage: 10,
-          totalItems: 0,
-          currentPage: 1,
-          totalPages: 0,
-          sortBy: [],
-          searchBy: [],
-          search: '',
-          select: [],
-        },
-        links: {
-          current: '/users?page=1&limit=10',
-        },
-      };
-
-      mockUserRepository.findAllPaginated.mockResolvedValue(expectedResult);
-
-      const result = await service.getUsersPaginated(query);
-
-      expect(mockUserRepository.findAllPaginated).toHaveBeenCalledWith(query);
-      expect(result).toBe(expectedResult);
-    });
-  });
-
-  describe('getUsersCursorPaginated', () => {
-    it('should return cursor-paginated users from repository', async () => {
-      const query: PaginateQuery = {
-        cursor: 'V001671444000000',
-        limit: 10,
-        sortBy: [['createdAt', 'DESC'] as [string, string]],
-        path: '/users',
-      };
-
-      const expectedResult: Paginated<User> = {
+      const query = { email: 'test@example.com' };
+      const expectedResult: ICursorPaginatedResult<User> = {
         data: [mockUser],
-        meta: {
-          itemsPerPage: 10,
-          cursor: 'V001671444000000',
-          sortBy: [['createdAt', 'DESC']],
-          searchBy: [],
-          search: '',
-          select: [],
-        },
-        links: {
-          current: '/users?cursor=V001671444000000&limit=10',
-          next: '/users?cursor=V001671444000001&limit=10',
-        },
+        nextCursor: 'next-cursor',
+        prevCursor: undefined,
+        hasNext: true,
+        hasPrevious: false,
       };
 
-      mockUserRepository.findAllCursorPaginated.mockResolvedValue(expectedResult);
+      mockUserRepository.findAllCursor.mockResolvedValue(expectedResult);
 
-      const result = await service.getUsersCursorPaginated(query);
+      const result = await service.getUsersCursor(options, query);
 
-      expect(mockUserRepository.findAllCursorPaginated).toHaveBeenCalledWith(query);
+      expect(mockUserRepository.findAllCursor).toHaveBeenCalledWith(
+        options,
+        query,
+      );
+      expect(result).toBe(expectedResult);
+    });
+
+    it('should call repository findAllCursor without optional parameters', async () => {
+      const options: ICursorPaginationOptions = {
+        limit: 10,
+      };
+      const expectedResult: ICursorPaginatedResult<User> = {
+        data: [],
+        nextCursor: undefined,
+        prevCursor: undefined,
+        hasNext: false,
+        hasPrevious: false,
+      };
+
+      mockUserRepository.findAllCursor.mockResolvedValue(expectedResult);
+
+      const result = await service.getUsersCursor(options);
+
+      expect(mockUserRepository.findAllCursor).toHaveBeenCalledWith(
+        options,
+        undefined,
+      );
       expect(result).toBe(expectedResult);
     });
   });

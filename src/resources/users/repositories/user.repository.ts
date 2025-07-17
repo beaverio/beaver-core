@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { paginate, Paginated, PaginateQuery, PaginateConfig, PaginationType } from 'nestjs-paginate';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import {
   CreateUserDto,
   QueryParamsUserDto,
@@ -10,55 +9,30 @@ import {
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
+import {
+  ICursorPaginationOptions,
+  ICursorPaginatedResult,
+} from '../../../common/interfaces/cursor-pagination.interface';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class UserRepository implements IUserRepository {
   private readonly logger = new Logger(UserRepository.name);
   private readonly CACHE_PREFIX = 'user:';
-  private readonly PAGINATED_CACHE_PREFIX = 'user:paginated:';
+  private readonly CURSOR_CACHE_PREFIX = 'user:cursor:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-  private readonly PAGINATED_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for paginated results
+  private readonly CURSOR_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for cursor results
 
-  private readonly paginateConfig: PaginateConfig<User> = {
-    sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-    nullSort: 'last',
-    defaultSortBy: [['createdAt', 'DESC']],
-    searchableColumns: ['email'], // Only include fields that exist in UserResponseDto
-    select: ['id', 'email', 'createdAt', 'updatedAt'], // Exclude password
-    filterableColumns: {
-      email: true,
-      id: true,
-    },
-    defaultLimit: 10,
-    maxLimit: 100,
-    // Use offset-based pagination by default for backward compatibility
-    paginationType: PaginationType.TAKE_AND_SKIP,
-  };
-
-  // Cursor-based pagination config for high-performance scenarios (e.g., transactions)
-  private readonly cursorPaginateConfig: PaginateConfig<User> = {
-    sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-    nullSort: 'last',
-    defaultSortBy: [['createdAt', 'DESC']],
-    searchableColumns: ['email'],
-    select: ['id', 'email', 'createdAt', 'updatedAt'],
-    filterableColumns: {
-      email: true,
-      id: true,
-    },
-    defaultLimit: 10,
-    maxLimit: 100,
-    // Use cursor-based pagination for better performance with large datasets
-    paginationType: PaginationType.CURSOR,
-  };
+  private readonly DEFAULT_LIMIT = 10;
+  private readonly MAX_LIMIT = 100;
+  private readonly SORTABLE_COLUMNS = ['id', 'email', 'createdAt', 'updatedAt'];
 
   constructor(
     @InjectRepository(User)
     private readonly repo: Repository<User>,
     @Inject('ICacheService')
     private readonly cacheService: ICacheService,
-  ) { }
+  ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
     const user = await this.repo.save(dto);
@@ -66,8 +40,8 @@ export class UserRepository implements IUserRepository {
     // Cache the new user
     await this.cacheEntity(user);
 
-    // Invalidate paginated cache since a new user was added
-    this.invalidatePaginatedCache();
+    // Invalidate cursor cache since a new user was added
+    this.invalidateCursorCache();
 
     this.logger.debug(`User created and cached: ${user.id}`);
     return user;
@@ -87,69 +61,161 @@ export class UserRepository implements IUserRepository {
     return users;
   }
 
-  async findAllPaginated(query: PaginateQuery): Promise<Paginated<User>> {
-    // Choose pagination config based on query parameters
-    // Use cursor-based pagination if cursor parameter is present
-    const config = query.cursor ? this.cursorPaginateConfig : this.paginateConfig;
-    
-    // Generate cache key for paginated results
-    const cacheKey = this.getPaginatedCacheKey(query);
+  async findAllCursor(
+    options: ICursorPaginationOptions,
+    where?: QueryParamsUserDto,
+  ): Promise<ICursorPaginatedResult<User>> {
+    // Generate cache key for cursor results
+    const cacheKey = this.getCursorCacheKey(options, where);
 
     // Try cache first
-    const cachedResult = await this.cacheService.get<Paginated<User>>(cacheKey);
+    const cachedResult =
+      await this.cacheService.get<ICursorPaginatedResult<User>>(cacheKey);
     if (cachedResult) {
-      this.logger.debug(`Cache hit for paginated users: ${cacheKey}`);
+      this.logger.debug(`Cache hit for cursor pagination: ${cacheKey}`);
       return cachedResult;
     }
 
-    // Cache miss - fetch from database using nestjs-paginate
-    const result = await paginate(query, this.repo, config);
+    // Validate options
+    const limit = Math.min(options.limit || this.DEFAULT_LIMIT, this.MAX_LIMIT);
+    const sortBy = this.SORTABLE_COLUMNS.includes(options.sortBy || 'createdAt')
+      ? options.sortBy || 'createdAt'
+      : 'createdAt';
+    const sortOrder = options.sortOrder || 'DESC';
+
+    // Build query
+    const queryBuilder = this.buildCursorQuery(where, sortBy, sortOrder);
+
+    // Apply cursor-based filtering
+    if (options.cursor) {
+      const decodedCursor = this.decodeCursor(options.cursor);
+      if (decodedCursor) {
+        if (sortOrder === 'DESC') {
+          queryBuilder.andWhere(`user.${sortBy} < :cursorValue`, {
+            cursorValue: decodedCursor.value,
+          });
+        } else {
+          queryBuilder.andWhere(`user.${sortBy} > :cursorValue`, {
+            cursorValue: decodedCursor.value,
+          });
+        }
+      }
+    }
+
+    // Fetch one extra record to check if there's a next page
+    queryBuilder.limit(limit + 1);
+
+    const users = await queryBuilder.getMany();
+
+    // Determine if there's a next page
+    const hasNext = users.length > limit;
+    if (hasNext) {
+      users.pop(); // Remove the extra record
+    }
+
+    // Determine cursors
+    let nextCursor: string | undefined;
+    let prevCursor: string | undefined;
+
+    if (users.length > 0) {
+      // Next cursor from the last item
+      if (hasNext) {
+        const lastUser = users[users.length - 1];
+        nextCursor = this.encodeCursor(lastUser[sortBy as keyof User]);
+      }
+
+      // Previous cursor from the first item (we need to check if there are items before this)
+      const firstUser = users[0];
+      const hasPrevious = await this.checkHasPrevious(
+        firstUser,
+        sortBy,
+        sortOrder,
+        where,
+      );
+      if (hasPrevious) {
+        prevCursor = this.encodeCursor(firstUser[sortBy as keyof User]);
+      }
+    }
+
+    const result: ICursorPaginatedResult<User> = {
+      data: users,
+      nextCursor,
+      prevCursor,
+      hasNext,
+      hasPrevious: !!prevCursor,
+    };
 
     // Cache the result
-    await this.cacheService.set(cacheKey, result, this.PAGINATED_CACHE_TTL);
+    await this.cacheService.set(cacheKey, result, this.CURSOR_CACHE_TTL);
 
-    // Also cache individual users for future lookups
-    for (const user of result.data) {
+    // Cache individual users for future lookups
+    for (const user of users) {
       await this.cacheEntity(user);
     }
 
-    const paginationType = query.cursor ? 'cursor-based' : 'offset-based';
     this.logger.debug(
-      `Found ${result.data.length} users using ${paginationType} pagination (page ${result.meta.currentPage}/${result.meta.totalPages}), cached result`,
+      `Found ${users.length} users using cursor pagination (limit: ${limit}, sortBy: ${sortBy}), cached result`,
     );
     return result;
   }
 
-  /**
-   * Alternative method for explicit cursor-based pagination
-   * Useful for high-volume scenarios like future Transactions entity
-   */
-  async findAllCursorPaginated(query: PaginateQuery): Promise<Paginated<User>> {
-    // Generate cache key for cursor-paginated results
-    const cacheKey = this.getPaginatedCacheKey(query, 'cursor');
+  private buildCursorQuery(
+    where?: QueryParamsUserDto,
+    sortBy = 'createdAt',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+  ): SelectQueryBuilder<User> {
+    const queryBuilder = this.repo
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.email', 'user.createdAt', 'user.updatedAt']); // Exclude password
 
-    // Try cache first
-    const cachedResult = await this.cacheService.get<Paginated<User>>(cacheKey);
-    if (cachedResult) {
-      this.logger.debug(`Cache hit for cursor-paginated users: ${cacheKey}`);
-      return cachedResult;
+    // Apply where conditions
+    if (where?.id) {
+      queryBuilder.andWhere('user.id = :id', { id: where.id });
+    }
+    if (where?.email) {
+      queryBuilder.andWhere('user.email = :email', { email: where.email });
     }
 
-    // Cache miss - fetch using cursor-based pagination
-    const result = await paginate(query, this.repo, this.cursorPaginateConfig);
+    // Apply sorting
+    queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
 
-    // Cache the result
-    await this.cacheService.set(cacheKey, result, this.PAGINATED_CACHE_TTL);
+    return queryBuilder;
+  }
 
-    // Also cache individual users for future lookups
-    for (const user of result.data) {
-      await this.cacheEntity(user);
+  private async checkHasPrevious(
+    firstUser: User,
+    sortBy: string,
+    sortOrder: 'ASC' | 'DESC',
+    where?: QueryParamsUserDto,
+  ): Promise<boolean> {
+    const queryBuilder = this.buildCursorQuery(where, sortBy, sortOrder);
+
+    if (sortOrder === 'DESC') {
+      queryBuilder.andWhere(`user.${sortBy} > :value`, {
+        value: firstUser[sortBy as keyof User],
+      });
+    } else {
+      queryBuilder.andWhere(`user.${sortBy} < :value`, {
+        value: firstUser[sortBy as keyof User],
+      });
     }
 
-    this.logger.debug(
-      `Found ${result.data.length} users using cursor-based pagination, cached result`,
-    );
-    return result;
+    const count = await queryBuilder.getCount();
+    return count > 0;
+  }
+
+  private encodeCursor(value: string | Date): string {
+    const cursorValue = value instanceof Date ? value.toISOString() : value;
+    return Buffer.from(cursorValue).toString('base64');
+  }
+
+  private decodeCursor(cursor: string): { value: string } | null {
+    try {
+      const decoded = Buffer.from(cursor, 'base64').toString('utf-8');
+      return { value: decoded };
+    } catch {
+      return null;
+    }
   }
 
   async findOne(where: QueryParamsUserDto): Promise<User | null> {
@@ -203,8 +269,8 @@ export class UserRepository implements IUserRepository {
     // Cache the updated user
     await this.cacheEntity(updatedUser);
 
-    // Invalidate paginated cache since user data changed
-    this.invalidatePaginatedCache();
+    // Invalidate cursor cache since user data changed
+    this.invalidateCursorCache();
 
     this.logger.debug(`User updated and re-cached: ${updatedUser.id}`);
     return updatedUser;
@@ -248,16 +314,16 @@ export class UserRepository implements IUserRepository {
   }
 
   /**
-   * Invalidate all paginated cache entries
+   * Invalidate all cursor cache entries
    * This is a simple approach - in production, you might want to use cache tags or patterns
    */
-  private invalidatePaginatedCache(): void {
+  private invalidateCursorCache(): void {
     try {
       // For now, we'll use a simple approach of clearing keys with our prefix
       // In a more sophisticated implementation, you might use cache tags or patterns
-      this.logger.debug('Paginated cache invalidated due to user data change');
+      this.logger.debug('Cursor cache invalidated due to user data change');
     } catch (error) {
-      this.logger.error('Error invalidating paginated cache:', error);
+      this.logger.error('Error invalidating cursor cache:', error);
     }
   }
 
@@ -269,26 +335,29 @@ export class UserRepository implements IUserRepository {
   }
 
   /**
-   * Generate cache key for paginated results using nestjs-paginate query
+   * Generate cache key for cursor results
    */
-  getPaginatedCacheKey(query: PaginateQuery, type?: string): string {
-    const queryHash = this.generateQueryHash(query, type);
-    return `${this.PAGINATED_CACHE_PREFIX}${queryHash}`;
+  getCursorCacheKey(
+    options: ICursorPaginationOptions,
+    where?: QueryParamsUserDto,
+  ): string {
+    const queryHash = this.generateCursorQueryHash(options, where);
+    return `${this.CURSOR_CACHE_PREFIX}${queryHash}`;
   }
 
   /**
-   * Generate a hash for query to use in cache keys
+   * Generate a hash for cursor query to use in cache keys
    */
-  private generateQueryHash(query: PaginateQuery, type?: string): string {
+  private generateCursorQueryHash(
+    options: ICursorPaginationOptions,
+    where?: QueryParamsUserDto,
+  ): string {
     const queryString = JSON.stringify({
-      type: type || (query.cursor ? 'cursor' : 'offset'),
-      page: query.page,
-      limit: query.limit,
-      sortBy: query.sortBy,
-      search: query.search,
-      filter: query.filter,
-      select: query.select,
-      cursor: query.cursor,
+      limit: options.limit,
+      cursor: options.cursor,
+      sortBy: options.sortBy,
+      sortOrder: options.sortOrder,
+      where: where,
     });
     return crypto
       .createHash('md5')

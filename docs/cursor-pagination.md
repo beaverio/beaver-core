@@ -1,66 +1,41 @@
 # Cursor-Based Pagination Implementation
 
+This document explains the custom cursor-based pagination implementation that replaces the previous `nestjs-paginate` library approach.
+
 ## Overview
 
-This document explains the cursor-based pagination implementation using `nestjs-paginate` and how it addresses performance concerns for high-volume entities like the future Transactions entity.
+Cursor-based pagination provides better performance and consistency for large datasets compared to offset-based pagination. It's particularly beneficial for high-volume entities like transactions where new records are frequently inserted.
 
-## Why Cursor-Based Pagination?
+## Key Benefits
 
-Traditional offset-based pagination (`LIMIT/OFFSET`) has performance issues with large datasets:
+1. **Consistent Performance**: Query time remains constant regardless of dataset size
+2. **Real-time Consistency**: No "shifting results" when new records are added during pagination
+3. **Better Scalability**: Avoids the "deep offset" problem of traditional pagination
+4. **Previous Cursor Support**: Enables bidirectional navigation
 
-1. **Deep Offset Problem**: `OFFSET 100000` requires the database to count and skip 100,000 rows
-2. **Consistency Issues**: New records can cause page shifting during pagination 
-3. **Database Load**: Large offsets become exponentially slower
+## API Usage
 
-Cursor-based pagination solves these issues by using a cursor (encoded value) to track position instead of counting rows.
+### Basic Cursor Pagination
 
-## Implementation Details
-
-### Current User Entity Example
-
-The User repository demonstrates both pagination approaches:
-
-```typescript
-// Standard pagination config (current default)
-private readonly paginateConfig: PaginateConfig<User> = {
-  paginationType: PaginationType.TAKE_AND_SKIP, // Offset-based
-  sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-  defaultSortBy: [['createdAt', 'DESC']],
-  // ... other config
-};
-
-// Cursor-based pagination config
-private readonly cursorPaginateConfig: PaginateConfig<User> = {
-  paginationType: PaginationType.CURSOR, // Cursor-based
-  sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-  defaultSortBy: [['createdAt', 'DESC']],
-  // ... other config
-};
+```http
+GET /users?limit=10
+GET /users?limit=10&cursor=eyJjcmVhdGVkQXQiOiIyMDIzLTEyLTMxVDIzOjU5OjU5LjAwMFoifQ==
 ```
 
-### API Usage Examples
+### With Filtering and Sorting
 
-#### Traditional Pagination (Current)
-```bash
-# First page
-GET /users?page=1&limit=10&sortBy=createdAt:DESC
-
-# Second page  
-GET /users?page=2&limit=10&sortBy=createdAt:DESC
+```http
+GET /users?limit=5&sortBy=email&sortOrder=ASC&email=test@example.com
+GET /users?limit=20&sortBy=createdAt&sortOrder=DESC&cursor=prev_cursor_value
 ```
 
-#### Cursor-Based Pagination (Enhanced)
-```bash
-# First page (no cursor needed)
-GET /users/cursor?limit=10&sortBy=createdAt:DESC
+### Explicit Cursor Endpoint
 
-# Next page (using cursor from previous response)
-GET /users/cursor?cursor=V001671444000000&limit=10&sortBy=createdAt:DESC
+```http
+GET /users/cursor?limit=10&cursor=next_cursor_value
 ```
 
-### Response Format
-
-Cursor-based responses include cursor metadata:
+## Response Format
 
 ```json
 {
@@ -68,153 +43,145 @@ Cursor-based responses include cursor metadata:
     {
       "id": "uuid",
       "email": "user@example.com",
-      "createdAt": "2023-12-20T10:00:00.000Z",
-      "updatedAt": "2023-12-20T10:00:00.000Z"
+      "createdAt": "2025-01-17T20:24:53.000Z",
+      "updatedAt": "2025-01-17T20:24:53.000Z"
     }
   ],
-  "meta": {
-    "itemsPerPage": 10,
-    "cursor": "V001671444000000"
-  },
-  "links": {
-    "current": "/users/cursor?cursor=V001671444000000&limit=10",
-    "next": "/users/cursor?cursor=V001671555000000&limit=10",
-    "previous": "/users/cursor?cursor=V001671333000000&limit=10"
+  "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI1LTAxLTE3VDIwOjI0OjUzLjAwMFoifQ==",
+  "prevCursor": "eyJjcmVhdGVkQXQiOiIyMDI1LTAxLTE3VDIwOjI0OjUyLjAwMFoifQ==",
+  "hasNext": true,
+  "hasPrevious": true
+}
+```
+
+## Implementation Details
+
+### Core Interfaces
+
+- **`ICursorPaginationOptions`**: Pagination parameters
+- **`ICursorPaginatedResult<T>`**: Response format with cursors
+- **`ICursorPaginatedRepository<T>`**: Repository interface extension
+
+### Cursor Encoding
+
+Cursors are base64-encoded values of the sort field (typically timestamps or IDs):
+
+```typescript
+// Encode
+const cursor = Buffer.from('2025-01-17T20:24:53.000Z').toString('base64');
+
+// Decode
+const decoded = Buffer.from(cursor, 'base64').toString('utf-8');
+```
+
+### Query Building
+
+The implementation uses TypeORM QueryBuilder for efficient queries:
+
+```typescript
+const queryBuilder = this.repo
+  .createQueryBuilder('user')
+  .select(['user.id', 'user.email', 'user.createdAt', 'user.updatedAt'])
+  .orderBy('user.createdAt', 'DESC');
+
+// Apply cursor filter
+if (cursor) {
+  queryBuilder.andWhere('user.createdAt < :cursorValue', { cursorValue: decodedCursor });
+}
+```
+
+### Bidirectional Navigation
+
+- **Next Cursor**: Created from the last item in the current page
+- **Previous Cursor**: Created from the first item, with existence check via additional query
+
+### Caching Strategy
+
+- **Result Caching**: Paginated results cached for 5 minutes with hash-based keys
+- **Individual Entity Caching**: Users from paginated results cached for future lookups
+- **Cache Invalidation**: Automatic clearing when data changes
+
+## Validation
+
+Query parameters are validated using class-validator:
+
+```typescript
+class CursorPaginationQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @Min(1)
+  @Max(100)
+  limit?: number;
+
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @IsOptional()
+  @IsIn(['ASC', 'DESC'])
+  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+}
+```
+
+## Database Performance
+
+### Traditional Offset Problems
+
+```sql
+-- SLOW: Deep offset requires counting/skipping rows
+SELECT * FROM transactions 
+ORDER BY created_at DESC 
+LIMIT 20 OFFSET 100000; -- Must scan 100,000 rows
+```
+
+### Cursor-Based Solution
+
+```sql
+-- FAST: Direct position using indexed column
+SELECT * FROM transactions 
+WHERE created_at < '2025-01-17T20:24:53.000Z'
+ORDER BY created_at DESC 
+LIMIT 20; -- Uses index seek
+```
+
+## Backward Compatibility
+
+The implementation maintains full backward compatibility:
+- Non-paginated requests continue to work as before
+- Pagination is opt-in based on query parameters
+- Existing API consumers require no changes
+
+## Future Extensions
+
+This implementation can be easily extended to other entities:
+
+1. Create entity-specific repository implementing `ICursorPaginatedRepository<T>`
+2. Add cursor pagination methods to service layer
+3. Update controller to handle cursor query parameters
+4. Configure appropriate sortable columns and caching strategies
+
+### Recommended for Transactions Entity
+
+```typescript
+export class TransactionRepository implements ICursorPaginatedRepository<Transaction> {
+  private readonly SORTABLE_COLUMNS = ['id', 'createdAt', 'amount', 'status'];
+  
+  async findAllCursor(options: ICursorPaginationOptions, where?: any): Promise<ICursorPaginatedResult<Transaction>> {
+    // Implementation optimized for high-volume transaction data
+    // Uses compound indexes on (user_id, created_at) for optimal performance
   }
 }
 ```
 
-## Future Transactions Entity
-
-For the upcoming Transactions entity, cursor-based pagination will be essential:
-
-### Recommended Configuration
-
-```typescript
-export class TransactionRepository {
-  private readonly cursorPaginateConfig: PaginateConfig<Transaction> = {
-    paginationType: PaginationType.CURSOR,
-    sortableColumns: ['id', 'createdAt', 'amount', 'status'],
-    defaultSortBy: [['createdAt', 'DESC']], // Most recent first
-    searchableColumns: ['description', 'reference'],
-    filterableColumns: {
-      status: true,
-      userId: true,
-      amount: [FilterOperator.GTE, FilterOperator.LTE],
-      createdAt: [FilterOperator.GTE, FilterOperator.LTE],
-    },
-    defaultLimit: 20,
-    maxLimit: 100,
-  };
-}
-```
-
-### Usage Examples for Transactions
-
-```bash
-# Recent transactions for a user
-GET /transactions?filter.userId=$eq:user123&sortBy=createdAt:DESC&limit=20
-
-# Next page using cursor
-GET /transactions?filter.userId=$eq:user123&cursor=V001671444000000&limit=20
-
-# Transactions by amount range
-GET /transactions?filter.amount=$gte:100&filter.amount=$lte:1000&sortBy=amount:DESC
-
-# Search with cursor pagination
-GET /transactions?search=payment&sortBy=createdAt:DESC&cursor=V001671444000000
-```
-
-## Performance Benefits
-
-### Database Query Efficiency
-
-**Traditional Offset (Slow)**:
-```sql
-SELECT * FROM transactions 
-WHERE user_id = 'user123' 
-ORDER BY created_at DESC 
-LIMIT 20 OFFSET 10000; -- Must count/skip 10,000 rows
-```
-
-**Cursor-Based (Fast)**:
-```sql
-SELECT * FROM transactions 
-WHERE user_id = 'user123' 
-  AND created_at < '2023-12-20T10:00:00.000Z' -- Direct position
-ORDER BY created_at DESC 
-LIMIT 20; -- No counting required
-```
-
-### Performance Characteristics
-
-| Pagination Type | Small Dataset | Large Dataset | Real-time Data |
-|----------------|---------------|---------------|----------------|
-| Offset-based   | Fast          | Slow          | Inconsistent   |
-| Cursor-based   | Fast          | Fast          | Consistent     |
-
-## Implementation Guidelines
-
-### When to Use Cursor Pagination
-
-✅ **Use cursor-based pagination for**:
-- High-volume entities (Transactions, Logs, Events)
-- Real-time data with frequent inserts
-- APIs requiring consistent pagination
-- Mobile apps with infinite scroll
-
-✅ **Use offset-based pagination for**:
-- Low-volume entities (Users, Settings)
-- Admin interfaces requiring page numbers
-- Reports with fixed page sizes
-- Backward compatibility requirements
-
-### Best Practices
-
-1. **Sort by Indexed Columns**: Always include indexed columns in `sortBy`
-2. **Include Unique Column**: Ensure at least one unique column (like `id`) in sort
-3. **Cache Cursor Results**: Cache cursor-based results for performance
-4. **Handle Edge Cases**: Validate cursor format and handle expired cursors
-
-## Caching Strategy
-
-The implementation includes smart caching for cursor-based pagination:
-
-```typescript
-// Cache key includes cursor parameter
-private generateQueryHash(query: PaginateQuery, type?: string): string {
-  const queryString = JSON.stringify({
-    type: type || (query.cursor ? 'cursor' : 'offset'),
-    page: query.page,
-    limit: query.limit,
-    sortBy: query.sortBy,
-    search: query.search,
-    filter: query.filter,
-    select: query.select,
-    cursor: query.cursor, // Included in cache key
-  });
-  return crypto.createHash('md5').update(queryString).digest('hex').substring(0, 8);
-}
-```
-
-## Migration Strategy
-
-To migrate existing endpoints to cursor-based pagination:
-
-1. **Dual Support**: Implement both pagination types initially
-2. **Auto-Detection**: Use cursor presence to choose pagination type
-3. **Gradual Migration**: Migrate high-volume endpoints first
-4. **Deprecation**: Gradually deprecate offset-based for appropriate endpoints
-
 ## Testing
 
-Comprehensive tests cover both pagination approaches:
+Comprehensive test coverage includes:
+- Cursor encoding/decoding
+- Query building with filters
+- Bidirectional navigation
+- Edge cases (empty results, invalid cursors)
+- Caching behavior
+- Repository integration
+- Service and controller layers
 
-- Repository layer: Tests both `PaginationType.TAKE_AND_SKIP` and `PaginationType.CURSOR`
-- Service layer: Tests delegation to appropriate repository methods
-- Controller layer: Tests automatic detection and explicit cursor endpoints
-- Caching: Tests cache key generation for both pagination types
-
-## Conclusion
-
-The cursor-based pagination implementation provides a foundation for high-performance pagination that will be essential for the Transactions entity and other high-volume data. The dual approach maintains backward compatibility while offering superior performance characteristics for appropriate use cases.
+The pattern is especially recommended for high-volume entities like transactions, logs, or event streams where performance and consistency are critical.
