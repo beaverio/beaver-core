@@ -21,13 +21,13 @@ export class CachedUserRepository implements IUserRepository {
     private readonly repo: Repository<User>,
     @Inject('ICacheService')
     private readonly cacheService: ICacheService,
-  ) {}
+  ) { }
 
   async create(dto: CreateUserDto): Promise<User> {
     const user = await this.repo.save(dto);
 
     // Cache the new user
-    await this.cacheUser(user);
+    await this.cacheEntity(user);
 
     this.logger.debug(`User created and cached: ${user.id}`);
     return user;
@@ -40,7 +40,7 @@ export class CachedUserRepository implements IUserRepository {
 
     // Cache individual users for future lookups
     for (const user of users) {
-      await this.cacheUser(user);
+      await this.cacheEntity(user);
     }
 
     this.logger.debug(`Found ${users.length} users, cached individually`);
@@ -73,7 +73,7 @@ export class CachedUserRepository implements IUserRepository {
     const user = await this.repo.findOne({ where });
 
     if (user) {
-      await this.cacheUser(user);
+      await this.cacheEntity(user);
       this.logger.debug(`User fetched from DB and cached: ${user.id}`);
     } else {
       this.logger.debug(`User not found for query:`, where);
@@ -90,13 +90,13 @@ export class CachedUserRepository implements IUserRepository {
     }
 
     // Invalidate cache before update
-    await this.invalidateUserCache(user);
+    await this.invalidateCache(user);
 
     this.repo.merge(user, dto);
     const updatedUser = await this.repo.save(user);
 
     // Cache the updated user
-    await this.cacheUser(updatedUser);
+    await this.cacheEntity(updatedUser);
 
     this.logger.debug(`User updated and re-cached: ${updatedUser.id}`);
     return updatedUser;
@@ -105,7 +105,7 @@ export class CachedUserRepository implements IUserRepository {
   /**
    * Cache a user entity with multiple keys for different lookup patterns
    */
-  private async cacheUser(user: User): Promise<void> {
+  async cacheEntity(user: User): Promise<void> {
     try {
       // Cache by ID
       const idKey = this.getCacheKey('id', user.id);
@@ -123,7 +123,7 @@ export class CachedUserRepository implements IUserRepository {
   /**
    * Invalidate all cache entries for a user
    */
-  private async invalidateUserCache(user: User): Promise<void> {
+  async invalidateCache(user: User): Promise<void> {
     try {
       const idKey = this.getCacheKey('id', user.id);
       const emailKey = this.getCacheKey('email', user.email);
@@ -142,7 +142,7 @@ export class CachedUserRepository implements IUserRepository {
   /**
    * Generate cache key for user lookups
    */
-  private getCacheKey(field: string, value: string): string {
+  getCacheKey(field: string, value: string): string {
     return `${this.CACHE_PREFIX}${field}:${value}`;
   }
 }
