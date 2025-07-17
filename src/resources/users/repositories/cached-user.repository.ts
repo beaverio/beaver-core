@@ -28,7 +28,7 @@ export class CachedUserRepository implements IUserRepository {
     private readonly repo: Repository<User>,
     @Inject('ICacheService')
     private readonly cacheService: ICacheService,
-  ) {}
+  ) { }
 
   async create(dto: CreateUserDto): Promise<User> {
     const user = await this.repo.save(dto);
