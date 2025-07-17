@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { paginate, Paginated, PaginateQuery, PaginateConfig } from 'nestjs-paginate';
 import {
   CreateUserDto,
   QueryParamsUserDto,
@@ -9,10 +10,6 @@ import {
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
-import {
-  IPaginationOptions,
-  IPaginatedResult,
-} from '../../../common/interfaces/pagination.interface';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -22,6 +19,20 @@ export class UserRepository implements IUserRepository {
   private readonly PAGINATED_CACHE_PREFIX = 'user:paginated:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
   private readonly PAGINATED_CACHE_TTL = 5 * 60 * 1000; // 5 minutes for paginated results
+
+  private readonly paginateConfig: PaginateConfig<User> = {
+    sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
+    nullSort: 'last',
+    defaultSortBy: [['createdAt', 'DESC']],
+    searchableColumns: ['email'], // Only include fields that exist in UserResponseDto
+    select: ['id', 'email', 'createdAt', 'updatedAt'], // Exclude password
+    filterableColumns: {
+      email: true,
+      id: true,
+    },
+    defaultLimit: 10,
+    maxLimit: 100,
+  };
 
   constructor(
     @InjectRepository(User)
@@ -57,77 +68,30 @@ export class UserRepository implements IUserRepository {
     return users;
   }
 
-  async findAllPaginated(
-    options: IPaginationOptions,
-    where?: QueryParamsUserDto,
-  ): Promise<IPaginatedResult<User>> {
+  async findAllPaginated(query: PaginateQuery): Promise<Paginated<User>> {
     // Generate cache key for paginated results
-    const cacheKey = this.getPaginatedCacheKey(options, where);
+    const cacheKey = this.getPaginatedCacheKey(query);
 
     // Try cache first
-    const cachedResult =
-      await this.cacheService.get<IPaginatedResult<User>>(cacheKey);
+    const cachedResult = await this.cacheService.get<Paginated<User>>(cacheKey);
     if (cachedResult) {
       this.logger.debug(`Cache hit for paginated users: ${cacheKey}`);
       return cachedResult;
     }
 
-    // Cache miss - fetch from database
-    const queryBuilder = this.repo.createQueryBuilder('user');
-
-    // Apply where conditions if provided
-    if (where) {
-      if (where.id) {
-        queryBuilder.andWhere('user.id = :id', { id: where.id });
-      }
-      if (where.email) {
-        queryBuilder.andWhere('user.email = :email', { email: where.email });
-      }
-    }
-
-    // Apply sorting
-    if (options.sortBy) {
-      queryBuilder.orderBy(
-        `user.${options.sortBy}`,
-        options.sortOrder || 'ASC',
-      );
-    } else {
-      // Default sort by createdAt DESC
-      queryBuilder.orderBy('user.createdAt', 'DESC');
-    }
-
-    // Apply pagination
-    const skip = (options.page - 1) * options.limit;
-    queryBuilder.skip(skip).take(options.limit);
-
-    // Execute query to get both data and total count
-    const [users, total] = await queryBuilder.getManyAndCount();
-
-    // Calculate pagination metadata
-    const totalPages = Math.ceil(total / options.limit);
-    const hasNext = options.page < totalPages;
-    const hasPrevious = options.page > 1;
-
-    const result: IPaginatedResult<User> = {
-      data: users,
-      total,
-      page: options.page,
-      limit: options.limit,
-      totalPages,
-      hasNext,
-      hasPrevious,
-    };
+    // Cache miss - fetch from database using nestjs-paginate
+    const result = await paginate(query, this.repo, this.paginateConfig);
 
     // Cache the result
     await this.cacheService.set(cacheKey, result, this.PAGINATED_CACHE_TTL);
 
     // Also cache individual users for future lookups
-    for (const user of users) {
+    for (const user of result.data) {
       await this.cacheEntity(user);
     }
 
     this.logger.debug(
-      `Found ${users.length} users (page ${options.page}/${totalPages}), cached result`,
+      `Found ${result.data.length} users (page ${result.meta.currentPage}/${result.meta.totalPages}), cached result`,
     );
     return result;
   }
@@ -249,24 +213,28 @@ export class UserRepository implements IUserRepository {
   }
 
   /**
-   * Generate cache key for paginated results
+   * Generate cache key for paginated results using nestjs-paginate query
    */
-  getPaginatedCacheKey(
-    options: IPaginationOptions,
-    where?: QueryParamsUserDto,
-  ): string {
-    const whereHash = where ? this.generateWhereHash(where) : 'no-filter';
-    return `${this.PAGINATED_CACHE_PREFIX}${options.page}:${options.limit}:${options.sortBy || 'default'}:${options.sortOrder || 'ASC'}:${whereHash}`;
+  getPaginatedCacheKey(query: PaginateQuery): string {
+    const queryHash = this.generateQueryHash(query);
+    return `${this.PAGINATED_CACHE_PREFIX}${queryHash}`;
   }
 
   /**
-   * Generate a hash for where conditions to use in cache keys
+   * Generate a hash for query to use in cache keys
    */
-  private generateWhereHash(where: QueryParamsUserDto): string {
-    const whereString = JSON.stringify(where);
+  private generateQueryHash(query: PaginateQuery): string {
+    const queryString = JSON.stringify({
+      page: query.page,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      search: query.search,
+      filter: query.filter,
+      select: query.select,
+    });
     return crypto
       .createHash('md5')
-      .update(whereString)
+      .update(queryString)
       .digest('hex')
       .substring(0, 8);
   }

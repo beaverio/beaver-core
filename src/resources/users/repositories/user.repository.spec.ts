@@ -1,9 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { paginate, PaginateQuery } from 'nestjs-paginate';
 import { UserRepository } from './user.repository';
 import { User } from '../entities/user.entity';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
+
+// Mock the paginate function
+jest.mock('nestjs-paginate', () => ({
+  paginate: jest.fn(),
+}));
 
 describe('UserRepository', () => {
   let repository: UserRepository;
@@ -178,133 +184,127 @@ describe('UserRepository', () => {
 
   describe('findAllPaginated', () => {
     it('should return cached paginated result if available', async () => {
-      const options = {
+      const query: PaginateQuery = {
         page: 1,
         limit: 10,
-        sortBy: 'email',
-        sortOrder: 'ASC' as const,
+        sortBy: [['email', 'ASC'] as [string, string]],
+        path: '/users',
       };
-      const where = { email: 'test@example.com' };
+      
       const cachedResult = {
         data: [mockUser],
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-        hasNext: false,
-        hasPrevious: false,
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 1,
+          currentPage: 1,
+          totalPages: 1,
+          sortBy: [['email', 'ASC']],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?page=1&limit=10',
+        },
       };
 
       cacheService.get.mockResolvedValue(cachedResult);
 
-      const result = await repository.findAllPaginated(options, where);
+      const result = await repository.findAllPaginated(query);
 
       expect(cacheService.get).toHaveBeenCalledWith(
-        expect.stringContaining('user:paginated:1:10:email:ASC:'),
+        expect.stringContaining('user:paginated:'),
       );
       expect(result).toBe(cachedResult);
-      expect(userRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
 
-    it('should fetch from database and cache result when cache miss', async () => {
-      const options = {
+    it('should fetch from database using nestjs-paginate when cache miss', async () => {
+      const query: PaginateQuery = {
         page: 1,
         limit: 10,
-        sortBy: 'email',
-        sortOrder: 'ASC' as const,
+        sortBy: [['email', 'ASC'] as [string, string]],
+        path: '/users',
       };
-      const users = [mockUser];
-      const total = 1;
+      const paginatedResult = {
+        data: [mockUser],
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 1,
+          currentPage: 1,
+          totalPages: 1,
+          sortBy: [['email', 'ASC']],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?page=1&limit=10',
+        },
+      };
 
       cacheService.get.mockResolvedValue(null); // Cache miss
+      (paginate as jest.Mock).mockResolvedValue(paginatedResult);
 
-      // Set up the query builder mock to return the expected result
-      const mockQueryBuilder = userRepository.createQueryBuilder();
-      (mockQueryBuilder.getManyAndCount as jest.Mock).mockResolvedValue([
-        users,
-        total,
-      ]);
+      const result = await repository.findAllPaginated(query);
 
-      const result = await repository.findAllPaginated(options);
-
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
-        'user.email',
-        'ASC',
+      expect(paginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
+          defaultLimit: 10,
+          maxLimit: 100,
+        }),
       );
-      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
-      expect(mockQueryBuilder.take).toHaveBeenCalledWith(10);
-      expect(mockQueryBuilder.getManyAndCount).toHaveBeenCalled();
-      expect(cacheService.set).toHaveBeenCalled(); // Cache the result
-      expect(result).toEqual({
-        data: users,
-        total: 1,
-        page: 1,
-        limit: 10,
-        totalPages: 1,
-        hasNext: false,
-        hasPrevious: false,
-      });
+      expect(cacheService.set).toHaveBeenCalledWith(
+        expect.stringContaining('user:paginated:'),
+        paginatedResult,
+        5 * 60 * 1000, // 5 minutes TTL
+      );
+      expect(result).toBe(paginatedResult);
     });
 
-    it('should apply where conditions when provided', async () => {
-      const options = { page: 1, limit: 10 };
-      const where = { id: 'test-id', email: 'test@example.com' };
+    it('should handle pagination query with filters', async () => {
+      const query: PaginateQuery = {
+        page: 2,
+        limit: 5,
+        filter: { email: 'test@example.com' },
+        path: '/users',
+      };
+      const paginatedResult = {
+        data: [mockUser],
+        meta: {
+          itemsPerPage: 5,
+          totalItems: 1,
+          currentPage: 2,
+          totalPages: 1,
+          sortBy: [],
+          searchBy: [],
+          search: '',
+          select: [],
+          filter: { email: 'test@example.com' },
+        },
+        links: {
+          current: '/users?page=2&limit=5&filter.email=test@example.com',
+        },
+      };
 
       cacheService.get.mockResolvedValue(null);
-      const mockQueryBuilder = userRepository.createQueryBuilder();
-      (mockQueryBuilder.getManyAndCount as jest.Mock).mockResolvedValue([
-        [],
-        0,
-      ]);
+      (paginate as jest.Mock).mockResolvedValue(paginatedResult);
 
-      await repository.findAllPaginated(options, where);
+      const result = await repository.findAllPaginated(query);
 
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', {
-        id: 'test-id',
-      });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
-        'user.email = :email',
-        { email: 'test@example.com' },
+      expect(paginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          filterableColumns: {
+            email: true,
+            id: true,
+          },
+        }),
       );
-    });
-
-    it('should use default sorting when no sortBy is provided', async () => {
-      const options = { page: 1, limit: 10 };
-
-      cacheService.get.mockResolvedValue(null);
-      const mockQueryBuilder = userRepository.createQueryBuilder();
-      (mockQueryBuilder.getManyAndCount as jest.Mock).mockResolvedValue([
-        [],
-        0,
-      ]);
-
-      await repository.findAllPaginated(options);
-
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
-        'user.createdAt',
-        'DESC',
-      );
-    });
-
-    it('should calculate pagination metadata correctly', async () => {
-      const options = { page: 2, limit: 5 };
-      const users = [mockUser];
-      const total = 12;
-
-      cacheService.get.mockResolvedValue(null);
-      const mockQueryBuilder = userRepository.createQueryBuilder();
-      (mockQueryBuilder.getManyAndCount as jest.Mock).mockResolvedValue([
-        users,
-        total,
-      ]);
-
-      const result = await repository.findAllPaginated(options);
-
-      expect(mockQueryBuilder.skip).toHaveBeenCalledWith(5); // (2-1) * 5
-      expect(mockQueryBuilder.take).toHaveBeenCalledWith(5);
-      expect(result.totalPages).toBe(3); // Math.ceil(12/5)
-      expect(result.hasNext).toBe(true); // page 2 < 3 total pages
-      expect(result.hasPrevious).toBe(true); // page 2 > 1
+      expect(result).toBe(paginatedResult);
     });
   });
 });

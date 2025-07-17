@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PaginateQuery } from 'nestjs-paginate';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
@@ -32,54 +33,65 @@ describe('UsersService', () => {
 
   describe('getUsersPaginated', () => {
     it('should call repository findAllPaginated method', async () => {
-      const options = {
+      const query: PaginateQuery = {
         page: 1,
         limit: 10,
-        sortBy: 'email',
-        sortOrder: 'ASC' as const,
+        sortBy: [['email', 'ASC'] as [string, string]],
+        path: '/users',
       };
-      const query = { email: 'test@example.com' };
       const expectedResult = {
         data: [],
-        total: 0,
-        page: 1,
-        limit: 10,
-        totalPages: 0,
-        hasNext: false,
-        hasPrevious: false,
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 0,
+          currentPage: 1,
+          totalPages: 0,
+          sortBy: [['email', 'ASC']],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?page=1&limit=10',
+        },
       };
 
       mockUserRepository.findAllPaginated.mockResolvedValue(expectedResult);
 
-      const result = await service.getUsersPaginated(options, query);
+      const result = await service.getUsersPaginated(query);
 
-      expect(mockUserRepository.findAllPaginated).toHaveBeenCalledWith(
-        options,
-        query,
-      );
+      expect(mockUserRepository.findAllPaginated).toHaveBeenCalledWith(query);
       expect(result).toBe(expectedResult);
     });
 
-    it('should call repository findAllPaginated without query', async () => {
-      const options = { page: 1, limit: 10 };
-      const expectedResult = {
-        data: [],
-        total: 0,
+    it('should call repository findAllPaginated without optional parameters', async () => {
+      const query: PaginateQuery = {
         page: 1,
         limit: 10,
-        totalPages: 0,
-        hasNext: false,
-        hasPrevious: false,
+        path: '/users',
+      };
+      const expectedResult = {
+        data: [],
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 0,
+          currentPage: 1,
+          totalPages: 0,
+          sortBy: [],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?page=1&limit=10',
+        },
       };
 
       mockUserRepository.findAllPaginated.mockResolvedValue(expectedResult);
 
-      const result = await service.getUsersPaginated(options);
+      const result = await service.getUsersPaginated(query);
 
-      expect(mockUserRepository.findAllPaginated).toHaveBeenCalledWith(
-        options,
-        undefined,
-      );
+      expect(mockUserRepository.findAllPaginated).toHaveBeenCalledWith(query);
       expect(result).toBe(expectedResult);
     });
   });

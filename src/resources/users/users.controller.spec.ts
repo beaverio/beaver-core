@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PaginateQuery } from 'nestjs-paginate';
 import { UsersController } from './users.controller';
 
 describe('UsersController', () => {
@@ -45,10 +46,11 @@ describe('UsersController', () => {
 
     it('should return non-paginated users when no pagination params are provided', async () => {
       const query = { email: 'test@example.com' };
+      const paginateQuery: PaginateQuery = { path: '/users' }; // No page/limit means non-paginated
       const users = [mockUser];
       mockUserService.getUsers.mockResolvedValue(users);
 
-      const result = await controller.getUsers(query);
+      const result = await controller.getUsers(query, paginateQuery);
 
       expect(mockUserService.getUsers).toHaveBeenCalledWith(query);
       expect(mockUserService.getUsersPaginated).not.toHaveBeenCalled();
@@ -56,75 +58,97 @@ describe('UsersController', () => {
     });
 
     it('should return paginated users when page param is provided', async () => {
-      const query = { page: 1, limit: 10, email: 'test@example.com' };
-      const paginatedResult = {
-        data: [mockUser],
-        total: 1,
+      const query = { email: 'test@example.com' };
+      const paginateQuery: PaginateQuery = {
         page: 1,
         limit: 10,
-        totalPages: 1,
-        hasNext: false,
-        hasPrevious: false,
+        path: '/users',
+      };
+      const paginatedResult = {
+        data: [mockUser],
+        meta: {
+          itemsPerPage: 10,
+          totalItems: 1,
+          currentPage: 1,
+          totalPages: 1,
+          sortBy: [],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?page=1&limit=10',
+        },
       };
       mockUserService.getUsersPaginated.mockResolvedValue(paginatedResult);
 
-      const result = await controller.getUsers(query);
+      const result = await controller.getUsers(query, paginateQuery);
 
-      expect(mockUserService.getUsersPaginated).toHaveBeenCalledWith(
-        { page: 1, limit: 10, sortBy: undefined, sortOrder: undefined },
-        { email: 'test@example.com' },
-      );
+      expect(mockUserService.getUsersPaginated).toHaveBeenCalledWith(paginateQuery);
       expect(mockUserService.getUsers).not.toHaveBeenCalled();
       expect(result).toHaveProperty('data');
-      expect(result).toHaveProperty('total');
-      expect(result).toHaveProperty('totalPages');
+      expect(result).toHaveProperty('meta');
+      expect(result).toHaveProperty('links');
     });
 
     it('should return paginated users when limit param is provided', async () => {
-      const query = { limit: 5 };
+      const query = {};
+      const paginateQuery: PaginateQuery = {
+        limit: 5,
+        path: '/users',
+      };
       const paginatedResult = {
         data: [],
-        total: 0,
-        page: 1,
-        limit: 5,
-        totalPages: 0,
-        hasNext: false,
-        hasPrevious: false,
+        meta: {
+          itemsPerPage: 5,
+          totalItems: 0,
+          currentPage: 1,
+          totalPages: 0,
+          sortBy: [],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?limit=5',
+        },
       };
       mockUserService.getUsersPaginated.mockResolvedValue(paginatedResult);
 
-      await controller.getUsers(query);
+      await controller.getUsers(query, paginateQuery);
 
-      expect(mockUserService.getUsersPaginated).toHaveBeenCalledWith(
-        { page: 1, limit: 5, sortBy: undefined, sortOrder: undefined },
-        undefined,
-      );
+      expect(mockUserService.getUsersPaginated).toHaveBeenCalledWith(paginateQuery);
     });
 
     it('should handle pagination with sorting parameters', async () => {
-      const query = {
+      const query = {};
+      const paginateQuery: PaginateQuery = {
         page: 2,
         limit: 20,
-        sortBy: 'email',
-        sortOrder: 'DESC' as const,
+        sortBy: [['email', 'DESC'] as [string, string]],
+        path: '/users',
       };
       const paginatedResult = {
         data: [],
-        total: 0,
-        page: 2,
-        limit: 20,
-        totalPages: 0,
-        hasNext: false,
-        hasPrevious: true,
+        meta: {
+          itemsPerPage: 20,
+          totalItems: 0,
+          currentPage: 2,
+          totalPages: 0,
+          sortBy: [['email', 'DESC']],
+          searchBy: [],
+          search: '',
+          select: [],
+        },
+        links: {
+          current: '/users?page=2&limit=20&sortBy=email:DESC',
+        },
       };
       mockUserService.getUsersPaginated.mockResolvedValue(paginatedResult);
 
-      await controller.getUsers(query);
+      await controller.getUsers(query, paginateQuery);
 
-      expect(mockUserService.getUsersPaginated).toHaveBeenCalledWith(
-        { page: 2, limit: 20, sortBy: 'email', sortOrder: 'DESC' },
-        undefined,
-      );
+      expect(mockUserService.getUsersPaginated).toHaveBeenCalledWith(paginateQuery);
     });
   });
 });
