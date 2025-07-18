@@ -1,10 +1,4 @@
-import {
-  IsEmail,
-  IsStrongPassword,
-  IsOptional,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsEmail, IsStrongPassword } from 'class-validator';
 import { PickType, PartialType } from '@nestjs/mapped-types';
 import { BaseDto, CreateUpdateDto } from '../../../common/dto/base.dto';
 import { SanitizeText } from '../../../common/decorators/sanitize.decorator';
@@ -18,12 +12,6 @@ export class BaseUserDto extends BaseDto {
 
   @IsStrongPassword()
   password: string;
-
-  @SanitizeText()
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  bio?: string | null;
 
   lastLogin?: string | null;
 }
@@ -51,13 +39,11 @@ export class UserResponseDto extends PickType(BaseUserDto, [
   'createdAt',
   'updatedAt',
   'lastLogin',
-  'bio',
 ] as const) {
   static fromEntity(user: User): UserResponseDto {
     const dto = new UserResponseDto();
     dto.id = user.id;
     dto.email = user.email;
-    dto.bio = user.bio;
     // Convert Unix timestamp (number) to ISO string for API response
     // Handle both number and string timestamps for compatibility
     const createdAtMs =

@@ -18,17 +18,12 @@ This implementation adds comprehensive data sanitization to prevent XSS and inje
 - `scripts/demo-sanitization.ts` - Demonstration script
 
 ### Modified Files
-- `src/resources/users/dto/user.dto.ts` - Added sanitization and bio field
-- `src/resources/users/entities/user.entity.ts` - Added bio column
+- `src/resources/users/dto/user.dto.ts` - Added sanitization decorators
 - `package.json` - Added dependencies and demo script
 
 ### Database Changes Required
 
-A new migration will be needed to add the `bio` column to the users table:
-
-```sql
-ALTER TABLE users ADD COLUMN bio VARCHAR(500) NULL;
-```
+No database changes are required. The sanitization system works with existing fields.
 
 ## Security Features Implemented
 
@@ -53,7 +48,7 @@ ALTER TABLE users ADD COLUMN bio VARCHAR(500) NULL;
 @SanitizeText()
 @IsString()
 @MaxLength(500)
-bio: string;
+name: string;
 ```
 
 ### For Email Fields

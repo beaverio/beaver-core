@@ -14,11 +14,11 @@ console.log('🔒 Beaver Core Data Sanitization Demo\n');
 // Example from the GitHub issue
 console.log('📋 Issue Example:');
 const issueExample = {
-  bio: "Hello <script>alert('xss')</script> world!"
+  email: "test<script>alert('xss')</script>@example.com"
 };
 const dto1 = plainToClass(UpdateUserDto, issueExample);
-console.log('Input:', issueExample.bio);
-console.log('Output:', dto1.bio);
+console.log('Input:', issueExample.email);
+console.log('Output:', dto1.email);
 console.log('✅ Script tags neutralized!\n');
 
 // XSS Attack Prevention
@@ -31,21 +31,21 @@ const xssTests = [
 ];
 
 xssTests.forEach((test, i) => {
-  const dto = plainToClass(UpdateUserDto, { bio: test });
+  const dto = plainToClass(UpdateUserDto, { email: test });
   console.log(`Test ${i + 1}:`);
   console.log('Input:', test);
-  console.log('Output:', dto.bio);
+  console.log('Output:', dto.email);
   console.log('');
 });
 
 // Emoji and Unicode Preservation
 console.log('😊 Emoji & Unicode Preservation:');
 const emojiTest = {
-  bio: "Hello 👋 World! 🌍 Testing αβγ 中文 العربية 🚀"
+  email: "hello👋@example.com"
 };
 const dto2 = plainToClass(UpdateUserDto, emojiTest);
-console.log('Input:', emojiTest.bio);
-console.log('Output:', dto2.bio);
+console.log('Input:', emojiTest.email);
+console.log('Output:', dto2.email);
 console.log('✅ Emojis and unicode preserved!\n');
 
 // Malicious Content Detection

@@ -55,7 +55,7 @@ export function Sanitize(options: SanitizationOptions = {}): PropertyDecorator {
  * class UserDto {
  *   @SanitizeText()
  *   @IsString()
- *   bio: string;
+ *   name: string;
  * }
  */
 export function SanitizeText(): PropertyDecorator {

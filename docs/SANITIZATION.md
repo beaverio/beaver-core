@@ -38,7 +38,7 @@ Convenient decorators for automatic sanitization in DTOs:
 class UserDto {
   @SanitizeText()
   @IsString()
-  bio: string;
+  name: string;
 
   @SanitizeRichText()  // For future rich text fields
   @IsString()
@@ -54,13 +54,13 @@ class UserDto {
 
 ### 1. Text Input Fields
 
-For basic text input (names, bios, descriptions):
+For basic text input (names, descriptions):
 
 ```typescript
 @SanitizeText()
 @IsString()
 @MaxLength(500)
-bio: string;
+name: string;
 ```
 
 **What it does:**
@@ -150,12 +150,12 @@ class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MaxLength(500)
-  bio?: string;
+  name?: string;
 }
 
 // Usage
 const userInput = {
-  bio: "Hello 👋 I'm a developer! <script>alert('xss')</script>"
+  name: "Hello 👋 I'm a developer! <script>alert('xss')</script>"
 };
 
 const dto = plainToClass(UpdateUserDto, userInput);
