@@ -1,15 +1,16 @@
 import { IsEmail, IsStrongPassword } from 'class-validator';
 import { PickType, PartialType } from '@nestjs/mapped-types';
 import { BaseDto, CreateUpdateDto } from '../../../common/dto/base.dto';
-import { SanitizeText } from '../../../common/decorators/sanitize.decorator';
+import { NoSanitize, SanitizeText } from '../../../common/decorators/sanitize.decorator';
 import { User } from '../entities/user.entity';
 
 // Base DTO containing all possible user fields with their validations
 export class BaseUserDto extends BaseDto {
-  @SanitizeText()
+  @SanitizeText() // Explicitly sanitize email - will also be picked up by SanitizationPipe
   @IsEmail()
   email: string;
 
+  @NoSanitize() // Password should never be sanitized
   @IsStrongPassword()
   password: string;
 

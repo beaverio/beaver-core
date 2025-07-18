@@ -1,6 +1,16 @@
 import * as sanitizeHtml from 'sanitize-html';
 
 /**
+ * Additional text-based patterns to remove that might not be caught by sanitize-html
+ */
+const DANGEROUS_TEXT_PATTERNS = [
+  /javascript\s*:/gi,
+  /data\s*:\s*text\/html/gi,
+  /vbscript\s*:/gi,
+  /on\w+\s*=/gi, // onclick=, onload=, etc.
+];
+
+/**
  * Configuration options for HTML sanitization
  */
 export interface SanitizationOptions {
@@ -93,8 +103,13 @@ export class SanitizationUtil {
       config.allowedAttributes = options.allowedAttributes;
     }
 
-    // Sanitize the content
+    // First, sanitize HTML content
     let sanitized = sanitizeHtml(value, config);
+
+    // Then, remove additional dangerous text patterns
+    DANGEROUS_TEXT_PATTERNS.forEach(pattern => {
+      sanitized = sanitized.replace(pattern, '');
+    });
 
     // Trim whitespace that might be left after tag removal
     sanitized = sanitized.trim();
