@@ -15,8 +15,7 @@ import { ICacheService } from '../../../common/interfaces/cache-service.interfac
 @Injectable()
 export class UserRepository
   extends BasePaginatedRepository<User>
-  implements IUserRepository
-{
+  implements IUserRepository {
   private readonly logger = new Logger(UserRepository.name);
   private readonly CACHE_PREFIX = 'user:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -32,14 +31,14 @@ export class UserRepository
 
   /**
    * Get default cursor pagination configuration for User entity
-   * Uses 'id' as the primary cursor field for consistent ordering
+   * Uses Unix timestamp (integer) based cursor pagination with createdAt
    */
   protected getDefaultPaginateConfig(): PaginateConfig<User> {
     return {
       defaultLimit: 50,
       maxLimit: 100,
-      sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-      defaultSortBy: [['id', 'ASC']], // Use 'id' for cursor pagination consistency
+      sortableColumns: ['createdAt', 'updatedAt', 'id'],
+      defaultSortBy: [['createdAt', 'DESC']],
       searchableColumns: ['email'],
       filterableColumns: {
         email: true,
@@ -51,10 +50,11 @@ export class UserRepository
   }
 
   async create(dto: CreateUserDto): Promise<User> {
-    const user = await this.repo.save(dto);
-    await this.cacheEntity(user);
-    this.logger.debug(`User created and cached: ${user.id}`);
-    return user;
+    const user = this.repo.create(dto);
+    const savedUser = await this.repo.save(user);
+    await this.cacheEntity(savedUser);
+    this.logger.debug(`User created and cached: ${savedUser.id}`);
+    return savedUser;
   }
 
   async findAll(where: QueryParamsUserDto): Promise<User[]> {
