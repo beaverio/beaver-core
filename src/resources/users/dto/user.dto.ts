@@ -16,15 +16,15 @@ export class BaseUserDto extends BaseDto {
 export class CreateUserDto extends PickType(BaseUserDto, [
   'email',
   'password',
-] as const) {}
+] as const) { }
 
 // Update DTO - automatically excludes id, createdAt, updatedAt
-export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, []) {}
+export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, []) { }
 
 // Query Params DTO - id and email are optional for filtering
 export class QueryParamsUserDto extends PartialType(
   PickType(BaseUserDto, ['id', 'email'] as const),
-) {}
+) { }
 
 // Response DTO - only safe fields (no password)
 export class UserResponseDto extends PickType(BaseUserDto, [
@@ -33,7 +33,7 @@ export class UserResponseDto extends PickType(BaseUserDto, [
   'createdAt',
   'updatedAt',
 ] as const) {
-  lastLogin?: string;
+  lastLogin: string | null;
 
   static fromEntity(user: User): UserResponseDto {
     const dto = new UserResponseDto();
@@ -50,17 +50,17 @@ export class UserResponseDto extends PickType(BaseUserDto, [
         ? parseInt(user.updatedAt, 10)
         : user.updatedAt;
 
+    // Handle nullable date columns
+    let lastLoginMs: number | null = null;
+    if (user.lastLogin) {
+      lastLoginMs = typeof user.lastLogin === 'string'
+        ? parseInt(user.lastLogin, 10)
+        : user.lastLogin;
+    }
+
     dto.createdAt = new Date(createdAtMs).toISOString();
     dto.updatedAt = new Date(updatedAtMs).toISOString();
-
-    // Add lastLogin if available
-    if (user.lastLogin) {
-      const lastLoginMs =
-        typeof user.lastLogin === 'string'
-          ? parseInt(user.lastLogin, 10)
-          : user.lastLogin;
-      dto.lastLogin = new Date(lastLoginMs).toISOString();
-    }
+    dto.lastLogin = lastLoginMs != null ? new Date(lastLoginMs).toISOString() : null;
 
     return dto;
   }
