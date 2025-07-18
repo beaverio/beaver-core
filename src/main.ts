@@ -2,11 +2,13 @@ import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { SanitizationPipe } from './common/pipes/sanitization.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(
+    new SanitizationPipe(),
     new ValidationPipe({
       whitelist: true,
     }),

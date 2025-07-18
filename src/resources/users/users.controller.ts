@@ -7,7 +7,7 @@ import {
   HttpStatus,
   Inject,
   Patch,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common';
 import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -22,7 +22,7 @@ export class UsersController {
   constructor(
     @Inject('IUserService')
     private readonly usersService: IUserService,
-  ) { }
+  ) {}
 
   @Get()
   async getUsers(
@@ -44,7 +44,7 @@ export class UsersController {
 
   @Delete('self')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(@CurrentUser() user: User,): Promise<void> {
+  async deleteUser(@CurrentUser() user: User): Promise<void> {
     await this.usersService.deleteUser(user.id);
   }
 

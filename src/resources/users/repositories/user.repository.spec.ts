@@ -1,7 +1,7 @@
 // Mock nestjs-paginate
 jest.mock('nestjs-paginate', () => {
   const originalModule = jest.requireActual('nestjs-paginate');
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
   return {
     ...originalModule,
     paginate: jest.fn(),
