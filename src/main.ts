@@ -7,9 +7,8 @@ import { SanitizationPipe } from './common/pipes/sanitization.pipe';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Apply global pipes in order: sanitization first, then validation
   app.useGlobalPipes(
-    new SanitizationPipe(), // Sanitize data before validation
+    new SanitizationPipe(),
     new ValidationPipe({
       whitelist: true,
     }),

@@ -1,7 +1,7 @@
 import 'reflect-metadata';
-import { Injectable, PipeTransform, ArgumentMetadata } from '@nestjs/common';
-import { SanitizationUtil, SanitizationOptions } from '../utils/sanitization.util';
-import { SANITIZE_METADATA_KEY, NO_SANITIZE_METADATA_KEY } from '../decorators/sanitize.decorator';
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
+import { NO_SANITIZE_METADATA_KEY, SANITIZE_METADATA_KEY } from '../decorators/sanitize.decorator';
+import { SanitizationUtil } from '../utils/sanitization.util';
 
 /**
  * Global sanitization pipe that automatically sanitizes all string fields
