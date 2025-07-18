@@ -18,6 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "demo:sanitization": "ts-node -r tsconfig-paths/register scripts/demo-sanitization.ts",
     "migration:generate": "NODE_OPTIONS='-r ts-node/register' npx typeorm migration:generate src/migrations/Init --dataSource data-source.ts",
     "migration:run": "NODE_OPTIONS='-r ts-node/register' npx typeorm migration:run --dataSource data-source.ts",
     "migration:revert": "NODE_OPTIONS='-r ts-node/register' npx typeorm migration:revert --dataSource data-source.ts"
