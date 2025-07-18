@@ -1,3 +1,4 @@
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
 import {
   CreateUserDto,
   QueryParamsUserDto,
@@ -7,7 +8,7 @@ import { User } from '../entities/user.entity';
 
 export interface IUserService {
   createUser(dto: CreateUserDto): Promise<User>;
-  getUsers(query?: QueryParamsUserDto): Promise<User[]>;
+  getUsers(query: PaginateQuery): Promise<Paginated<User>>;
   getUser(query: QueryParamsUserDto): Promise<User>;
   updateUser(id: string, dto: UpdateUserDto): Promise<User>;
 }

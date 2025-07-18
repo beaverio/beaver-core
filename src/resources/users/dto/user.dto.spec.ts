@@ -8,6 +8,35 @@ import {
 } from './user.dto';
 import { User } from '../entities/user.entity';
 
+// Helper function to create mock User with all required properties
+const createMockUser = (overrides: Partial<User> = {}): User => {
+  const timestamp = Date.now();
+  const baseUser = {
+    id: '1',
+    email: 'user1@example.com',
+    password: 'pass1',
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    setCreationTimestamps: jest.fn(),
+    setUpdateTimestamp: jest.fn(),
+    ...overrides,
+  };
+
+  // Add getter properties with proper typing
+  Object.defineProperty(baseUser, 'createdAtDate', {
+    get: function (this: { createdAt: number }) {
+      return new Date(this.createdAt);
+    },
+  });
+  Object.defineProperty(baseUser, 'updatedAtDate', {
+    get: function (this: { updatedAt: number }) {
+      return new Date(this.updatedAt);
+    },
+  });
+
+  return baseUser as User;
+};
+
 describe('DTO Behavior Tests', () => {
   describe('CreateUserDto', () => {
     it('should validate correctly with valid data', async () => {
@@ -69,12 +98,13 @@ describe('DTO Behavior Tests', () => {
 
   describe('UserResponseDto', () => {
     it('should transform entity correctly without exposing sensitive fields', () => {
-      const user = new User();
-      user.id = 'test-uuid';
-      user.email = 'response@example.com';
-      user.password = 'should-not-appear';
-      user.createdAt = new Date('2023-01-01T00:00:00Z');
-      user.updatedAt = new Date('2023-01-01T12:00:00Z');
+      const user = createMockUser({
+        id: 'test-uuid',
+        email: 'response@example.com',
+        password: 'should-not-appear',
+        createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
+        updatedAt: new Date('2023-01-01T12:00:00Z').getTime(),
+      });
 
       const responseDto = UserResponseDto.fromEntity(user);
 
@@ -87,23 +117,50 @@ describe('DTO Behavior Tests', () => {
     });
 
     it('should transform multiple entities correctly', () => {
-      const users = [
-        {
+      // Helper function to create mock User with all required properties
+      const createMockUser = (overrides: Partial<User> = {}): User => {
+        const timestamp = Date.now();
+        const baseUser = {
           id: '1',
           email: 'user1@example.com',
           password: 'pass1',
-          refreshToken: 'token1',
-          createdAt: new Date('2023-01-01T00:00:00Z'),
-          updatedAt: new Date('2023-01-01T12:00:00Z'),
-        } as User,
-        {
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          setCreationTimestamps: jest.fn(),
+          setUpdateTimestamp: jest.fn(),
+          ...overrides,
+        };
+
+        // Add getter properties with proper typing
+        Object.defineProperty(baseUser, 'createdAtDate', {
+          get: function (this: { createdAt: number }) {
+            return new Date(this.createdAt);
+          },
+        });
+        Object.defineProperty(baseUser, 'updatedAtDate', {
+          get: function (this: { updatedAt: number }) {
+            return new Date(this.updatedAt);
+          },
+        });
+
+        return baseUser as User;
+      };
+
+      const users = [
+        createMockUser({
+          id: '1',
+          email: 'user1@example.com',
+          password: 'pass1',
+          createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
+          updatedAt: new Date('2023-01-01T12:00:00Z').getTime(),
+        }),
+        createMockUser({
           id: '2',
           email: 'user2@example.com',
           password: 'pass2',
-          refreshToken: 'token2',
-          createdAt: new Date('2023-01-02T00:00:00Z'),
-          updatedAt: new Date('2023-01-02T12:00:00Z'),
-        } as User,
+          createdAt: new Date('2023-01-02T00:00:00Z').getTime(),
+          updatedAt: new Date('2023-01-02T12:00:00Z').getTime(),
+        }),
       ];
 
       const responseDtos = UserResponseDto.fromEntities(users);

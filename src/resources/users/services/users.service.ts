@@ -1,5 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { hash } from 'bcryptjs';
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
 import {
   CreateUserDto,
   QueryParamsUserDto,
@@ -14,7 +15,7 @@ export class UsersService implements IUserService {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
-  ) { }
+  ) {}
 
   async createUser(dto: CreateUserDto): Promise<User> {
     return this.userRepository.create({
@@ -23,8 +24,8 @@ export class UsersService implements IUserService {
     });
   }
 
-  async getUsers(query: QueryParamsUserDto): Promise<User[]> {
-    return await this.userRepository.findAll(query);
+  async getUsers(query: PaginateQuery): Promise<Paginated<User>> {
+    return await this.userRepository.findPaginated(query);
   }
 
   async getUser(query: QueryParamsUserDto): Promise<User> {
@@ -47,5 +48,4 @@ export class UsersService implements IUserService {
 
     return await this.userRepository.update(id, updateData);
   }
-
 }

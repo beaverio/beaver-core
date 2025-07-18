@@ -4,16 +4,12 @@ import {
   Get,
   Inject,
   Patch,
-  Query,
   UseGuards,
 } from '@nestjs/common';
+import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import {
-  QueryParamsUserDto,
-  UpdateUserDto,
-  UserResponseDto,
-} from './dto/user.dto';
+import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
 import { User } from './entities/user.entity';
 import { IUserService } from './interfaces/user-service.interface';
 
@@ -27,10 +23,18 @@ export class UsersController {
 
   @Get()
   async getUsers(
-    @Query() query: QueryParamsUserDto,
-  ): Promise<UserResponseDto[]> {
-    const users = await this.usersService.getUsers(query);
-    return UserResponseDto.fromEntities(users);
+    @Paginate() query: PaginateQuery,
+  ): Promise<Paginated<UserResponseDto>> {
+    // Always use pagination with default limit of 50
+    const result = await this.usersService.getUsers(query);
+
+    // Transform User entities to UserResponseDto
+    const transformedData = UserResponseDto.fromEntities(result.data);
+
+    return {
+      ...result,
+      data: transformedData,
+    } as Paginated<UserResponseDto>;
   }
 
   @Get('self')

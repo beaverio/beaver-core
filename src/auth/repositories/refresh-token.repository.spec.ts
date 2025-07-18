@@ -56,7 +56,12 @@ describe('RefreshTokenRepository', () => {
       mockRepository.create.mockReturnValue(mockRefreshToken as any);
       mockRepository.save.mockResolvedValue(mockRefreshToken as any);
 
-      const result = await repository.create(userId, tokenHash, expiresAt, deviceInfo);
+      const result = await repository.create(
+        userId,
+        tokenHash,
+        expiresAt,
+        deviceInfo,
+      );
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         userId,
@@ -76,7 +81,10 @@ describe('RefreshTokenRepository', () => {
 
       mockRepository.findOne.mockResolvedValue(mockRefreshToken as any);
 
-      const result = await repository.findByUserIdAndTokenHash(userId, tokenHash);
+      const result = await repository.findByUserIdAndTokenHash(
+        userId,
+        tokenHash,
+      );
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { userId, tokenHash },
@@ -87,7 +95,10 @@ describe('RefreshTokenRepository', () => {
     it('should return null if token not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      const result = await repository.findByUserIdAndTokenHash('user-123', 'hash-123');
+      const result = await repository.findByUserIdAndTokenHash(
+        'user-123',
+        'hash-123',
+      );
 
       expect(result).toBeNull();
     });
@@ -139,13 +150,17 @@ describe('RefreshTokenRepository', () => {
         execute: jest.fn().mockResolvedValue({ affected: 5 }),
       };
 
-      mockRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockRepository.createQueryBuilder.mockReturnValue(
+        mockQueryBuilder as any,
+      );
 
       await repository.deleteExpired();
 
       expect(mockRepository.createQueryBuilder).toHaveBeenCalled();
       expect(mockQueryBuilder.delete).toHaveBeenCalled();
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('expiresAt < :now', { now: expect.any(Date) });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('expiresAt < :now', {
+        now: expect.any(Date),
+      });
       expect(mockQueryBuilder.execute).toHaveBeenCalled();
     });
   });

@@ -21,9 +21,6 @@ export class CreateUserDto extends PickType(BaseUserDto, [
 // Update DTO - automatically excludes id, createdAt, updatedAt
 export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, []) {}
 
-// Internal DTO for system updates - automatically excludes id, createdAt, updatedAt
-export class InternalUpdateUserDto extends CreateUpdateDto(BaseUserDto, []) {}
-
 // Query Params DTO - id and email are optional for filtering
 export class QueryParamsUserDto extends PartialType(
   PickType(BaseUserDto, ['id', 'email'] as const),
@@ -40,14 +37,19 @@ export class UserResponseDto extends PickType(BaseUserDto, [
     const dto = new UserResponseDto();
     dto.id = user.id;
     dto.email = user.email;
-    dto.createdAt =
-      user.createdAt instanceof Date
-        ? user.createdAt.toISOString()
+    // Convert Unix timestamp (number) to ISO string for API response
+    // Handle both number and string timestamps for compatibility
+    const createdAtMs =
+      typeof user.createdAt === 'string'
+        ? parseInt(user.createdAt, 10)
         : user.createdAt;
-    dto.updatedAt =
-      user.updatedAt instanceof Date
-        ? user.updatedAt.toISOString()
+    const updatedAtMs =
+      typeof user.updatedAt === 'string'
+        ? parseInt(user.updatedAt, 10)
         : user.updatedAt;
+
+    dto.createdAt = new Date(createdAtMs).toISOString();
+    dto.updatedAt = new Date(updatedAtMs).toISOString();
     return dto;
   }
 

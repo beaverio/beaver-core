@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UsersController } from './users.controller';
 import { UsersService } from './services/users.service';
-import { CachedUserRepository } from './repositories/cached-user.repository';
+import { UserRepository } from './repositories/user.repository';
 import { CommonModule } from '../../common/common.module';
 
 @Module({
@@ -16,7 +16,7 @@ import { CommonModule } from '../../common/common.module';
     },
     {
       provide: 'IUserRepository',
-      useClass: CachedUserRepository,
+      useClass: UserRepository,
     },
   ],
   exports: ['IUserService'],
