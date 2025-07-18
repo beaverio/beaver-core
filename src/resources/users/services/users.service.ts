@@ -15,7 +15,7 @@ export class UsersService implements IUserService {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
-  ) {}
+  ) { }
 
   async createUser(dto: CreateUserDto): Promise<User> {
     return this.userRepository.create({
@@ -47,5 +47,15 @@ export class UsersService implements IUserService {
     }
 
     return await this.userRepository.update(id, updateData);
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await this.getUser({ id });
+
+    await this.userRepository.hardDelete(id);
+  }
+
+  async updateLastLogin(id: string): Promise<User> {
+    return await this.userRepository.updateLastLogin(id);
   }
 }

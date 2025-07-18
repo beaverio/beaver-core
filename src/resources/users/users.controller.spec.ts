@@ -15,6 +15,7 @@ describe('UsersController', () => {
       password: 'hashed-password',
       createdAt: now,
       updatedAt: now,
+      lastLogin: null,
       setCreationTimestamps: jest.fn(),
       setUpdateTimestamp: jest.fn(),
       ...overrides,
@@ -61,7 +62,9 @@ describe('UsersController', () => {
     getUsers: jest.fn(),
     getUser: jest.fn(),
     updateUser: jest.fn(),
+    deleteUser: jest.fn(),
     createUser: jest.fn(),
+    updateLastLogin: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -210,13 +213,16 @@ describe('UsersController', () => {
   });
 
   describe('updateUser', () => {
-    it('should update a user', async () => {
+    it('should update a user when user is updating themselves', async () => {
       const updateDto = { email: 'updated@example.com' };
       const updatedUser = createMockUser({ ...mockUser, ...updateDto });
 
       mockUserService.updateUser.mockResolvedValue(updatedUser);
 
-      const result = await controller.updateUser(mockUser, updateDto);
+      const result = await controller.updateUser(
+        mockUser,
+        updateDto,
+      );
 
       expect(mockUserService.updateUser).toHaveBeenCalledWith(
         mockUser.id,
@@ -224,6 +230,17 @@ describe('UsersController', () => {
       );
       expect(result.email).toBe('updated@example.com');
       expect(result).not.toHaveProperty('password');
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should delete a user when user is deleting themselves', async () => {
+      mockUserService.deleteUser.mockResolvedValue(undefined);
+
+      const result = await controller.deleteUser(mockUser);
+
+      expect(mockUserService.deleteUser).toHaveBeenCalledWith(mockUser.id);
+      expect(result).toBeUndefined();
     });
   });
 });

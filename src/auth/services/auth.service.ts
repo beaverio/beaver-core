@@ -111,6 +111,9 @@ export class AuthService implements IAuthService {
   }
 
   async signin(user: User, response: Response) {
+    // Update last login timestamp
+    await this.userService.updateLastLogin(user.id);
+
     const expirationAccessToken = new Date();
     expirationAccessToken.setSeconds(
       expirationAccessToken.getSeconds() +

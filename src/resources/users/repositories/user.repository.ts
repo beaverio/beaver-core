@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { PaginateConfig, PaginationType } from 'nestjs-paginate';
+import { Repository } from 'typeorm';
+import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 import { BasePaginatedRepository } from '../../../common/repositories/base-paginated.repository';
 import {
   CreateUserDto,
@@ -10,13 +11,11 @@ import {
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
-import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 
 @Injectable()
 export class UserRepository
   extends BasePaginatedRepository<User>
-  implements IUserRepository
-{
+  implements IUserRepository {
   private readonly logger = new Logger(UserRepository.name);
   private readonly CACHE_PREFIX = 'user:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -82,9 +81,17 @@ export class UserRepository
       }
     }
 
-    const user = await this.repo.findOne({
-      where: where as Parameters<typeof this.repo.findOne>[0]['where'],
-    });
+    const queryBuilder = this.repo.createQueryBuilder('user');
+
+    if (where.email) {
+      queryBuilder.andWhere('user.email = :email', { email: where.email });
+    }
+
+    if (where.id) {
+      queryBuilder.andWhere('user.id = :id', { id: where.id });
+    }
+
+    const user = await queryBuilder.getOne();
 
     if (user) {
       await this.cacheEntity(user);
@@ -95,6 +102,24 @@ export class UserRepository
 
   async update(id: string, dto: UpdateUserDto): Promise<User> {
     await this.repo.update(id, dto);
+    const user = await this.repo.findOneBy({ id });
+
+    if (user) {
+      await this.cacheEntity(user);
+    }
+
+    return user!;
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.invalidateEntity(id);
+    await this.repo.delete(id);
+  }
+
+  async updateLastLogin(id: string): Promise<User> {
+    const now = Date.now();
+    await this.repo.update(id, { lastLogin: now });
+
     const user = await this.repo.findOneBy({ id });
 
     if (user) {

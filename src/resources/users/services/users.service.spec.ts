@@ -16,6 +16,7 @@ describe('UsersService', () => {
       password: 'hashedpassword',
       createdAt: timestamp,
       updatedAt: timestamp,
+      lastLogin: null,
       setCreationTimestamps: jest.fn(),
       setUpdateTimestamp: jest.fn(),
       ...overrides,
@@ -64,6 +65,8 @@ describe('UsersService', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     findPaginated: jest.fn(),
+    hardDelete: jest.fn(),
+    updateLastLogin: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -274,6 +277,48 @@ describe('UsersService', () => {
       expect(mockUserRepository.update).toHaveBeenCalledWith('test-id', {
         password: expect.any(String), // Should be hashed
       });
+      expect(result).toEqual(updatedUser);
+    });
+  });
+
+  describe('deleteUser', () => {
+    it('should hard delete user', async () => {
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      mockUserRepository.hardDelete.mockResolvedValue(undefined);
+
+      const result = await service.deleteUser('test-id');
+
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        id: 'test-id',
+      });
+      expect(mockUserRepository.hardDelete).toHaveBeenCalledWith('test-id');
+      expect(result).toBeUndefined();
+    });
+
+    it('should throw NotFoundException when trying to delete non-existent user', async () => {
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.deleteUser('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockUserRepository.hardDelete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateLastLogin', () => {
+    it('should update last login timestamp', async () => {
+      const updatedUser = createMockUser({
+        ...mockUser,
+        lastLogin: Date.now(),
+      });
+
+      mockUserRepository.updateLastLogin.mockResolvedValue(updatedUser);
+
+      const result = await service.updateLastLogin('test-id');
+
+      expect(mockUserRepository.updateLastLogin).toHaveBeenCalledWith(
+        'test-id',
+      );
       expect(result).toEqual(updatedUser);
     });
   });

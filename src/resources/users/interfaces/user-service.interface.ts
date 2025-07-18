@@ -11,4 +11,6 @@ export interface IUserService {
   getUsers(query: PaginateQuery): Promise<Paginated<User>>;
   getUser(query: QueryParamsUserDto): Promise<User>;
   updateUser(id: string, dto: UpdateUserDto): Promise<User>;
+  deleteUser(id: string): Promise<void>;
+  updateLastLogin(id: string): Promise<User>;
 }

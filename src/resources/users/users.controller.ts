@@ -1,10 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
   Patch,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
 import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -19,16 +22,13 @@ export class UsersController {
   constructor(
     @Inject('IUserService')
     private readonly usersService: IUserService,
-  ) {}
+  ) { }
 
   @Get()
   async getUsers(
     @Paginate() query: PaginateQuery,
   ): Promise<Paginated<UserResponseDto>> {
-    // Always use pagination with default limit of 50
     const result = await this.usersService.getUsers(query);
-
-    // Transform User entities to UserResponseDto
     const transformedData = UserResponseDto.fromEntities(result.data);
 
     return {
@@ -42,7 +42,13 @@ export class UsersController {
     return UserResponseDto.fromEntity(user);
   }
 
-  @Patch(':id')
+  @Delete('self')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteUser(@CurrentUser() user: User,): Promise<void> {
+    await this.usersService.deleteUser(user.id);
+  }
+
+  @Patch('self')
   async updateUser(
     @CurrentUser() user: User,
     @Body() dto: UpdateUserDto,
