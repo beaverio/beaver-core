@@ -38,6 +38,10 @@ export class UsersService implements IUserService {
     return user;
   }
 
+  async getUserById(id: string): Promise<User> {
+    return this.getUser({ id });
+  }
+
   // For user updates through the controller
   async updateUser(id: string, dto: UpdateUserDto): Promise<User> {
     const updateData = { ...dto };
@@ -47,5 +51,16 @@ export class UsersService implements IUserService {
     }
 
     return await this.userRepository.update(id, updateData);
+  }
+
+  async deleteUser(id: string): Promise<User> {
+    // Check if user exists first
+    await this.getUserById(id);
+    
+    return await this.userRepository.softDelete(id);
+  }
+
+  async updateLastLogin(id: string): Promise<User> {
+    return await this.userRepository.updateLastLogin(id);
   }
 }

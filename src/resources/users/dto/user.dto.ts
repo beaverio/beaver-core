@@ -33,6 +33,8 @@ export class UserResponseDto extends PickType(BaseUserDto, [
   'createdAt',
   'updatedAt',
 ] as const) {
+  lastLogin?: string;
+
   static fromEntity(user: User): UserResponseDto {
     const dto = new UserResponseDto();
     dto.id = user.id;
@@ -50,6 +52,16 @@ export class UserResponseDto extends PickType(BaseUserDto, [
 
     dto.createdAt = new Date(createdAtMs).toISOString();
     dto.updatedAt = new Date(updatedAtMs).toISOString();
+    
+    // Add lastLogin if available
+    if (user.lastLogin) {
+      const lastLoginMs =
+        typeof user.lastLogin === 'string'
+          ? parseInt(user.lastLogin, 10)
+          : user.lastLogin;
+      dto.lastLogin = new Date(lastLoginMs).toISOString();
+    }
+    
     return dto;
   }
 

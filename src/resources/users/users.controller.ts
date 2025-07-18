@@ -1,10 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
+  Param,
   Patch,
   UseGuards,
+  ForbiddenException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -42,12 +46,38 @@ export class UsersController {
     return UserResponseDto.fromEntity(user);
   }
 
+  @Get(':id')
+  async getUserById(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
+    const user = await this.usersService.getUserById(id);
+    return UserResponseDto.fromEntity(user);
+  }
+
   @Patch(':id')
   async updateUser(
-    @CurrentUser() user: User,
+    @CurrentUser() currentUser: User,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
   ): Promise<UserResponseDto> {
-    const updatedUser = await this.usersService.updateUser(user.id, dto);
+    // Users can only update themselves
+    if (currentUser.id !== id) {
+      throw new ForbiddenException('You can only update your own profile');
+    }
+
+    const updatedUser = await this.usersService.updateUser(id, dto);
     return UserResponseDto.fromEntity(updatedUser);
+  }
+
+  @Delete(':id')
+  async deleteUser(
+    @CurrentUser() currentUser: User,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<UserResponseDto> {
+    // Users can only delete themselves
+    if (currentUser.id !== id) {
+      throw new ForbiddenException('You can only delete your own profile');
+    }
+
+    const deletedUser = await this.usersService.deleteUser(id);
+    return UserResponseDto.fromEntity(deletedUser);
   }
 }
