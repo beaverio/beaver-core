@@ -221,7 +221,11 @@ describe('UsersController', () => {
 
       mockUserService.updateUser.mockResolvedValue(updatedUser);
 
-      const result = await controller.updateUser(mockUser, mockUser.id, updateDto);
+      const result = await controller.updateUser(
+        mockUser,
+        mockUser.id,
+        updateDto,
+      );
 
       expect(mockUserService.updateUser).toHaveBeenCalledWith(
         mockUser.id,
@@ -236,9 +240,9 @@ describe('UsersController', () => {
       const otherUserId = 'other-user-id';
 
       await expect(
-        controller.updateUser(mockUser, otherUserId, updateDto)
+        controller.updateUser(mockUser, otherUserId, updateDto),
       ).rejects.toThrow('You can only update your own profile');
-      
+
       expect(mockUserService.updateUser).not.toHaveBeenCalled();
     });
   });
@@ -258,7 +262,10 @@ describe('UsersController', () => {
 
   describe('deleteUser', () => {
     it('should delete a user when user is deleting themselves', async () => {
-      const deletedUser = createMockUser({ ...mockUser, deletedAt: Date.now() });
+      const deletedUser = createMockUser({
+        ...mockUser,
+        deletedAt: Date.now(),
+      });
 
       mockUserService.deleteUser.mockResolvedValue(deletedUser);
 
@@ -273,9 +280,9 @@ describe('UsersController', () => {
       const otherUserId = 'other-user-id';
 
       await expect(
-        controller.deleteUser(mockUser, otherUserId)
+        controller.deleteUser(mockUser, otherUserId),
       ).rejects.toThrow('You can only delete your own profile');
-      
+
       expect(mockUserService.deleteUser).not.toHaveBeenCalled();
     });
   });

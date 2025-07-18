@@ -288,27 +288,36 @@ describe('UsersService', () => {
 
       const result = await service.getUserById('test-id');
 
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ id: 'test-id' });
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        id: 'test-id',
+      });
       expect(result).toEqual(mockUser);
     });
 
     it('should throw NotFoundException when user not found by ID', async () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getUserById('nonexistent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.getUserById('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('deleteUser', () => {
     it('should soft delete user', async () => {
-      const deletedUser = createMockUser({ ...mockUser, deletedAt: Date.now() });
-      
+      const deletedUser = createMockUser({
+        ...mockUser,
+        deletedAt: Date.now(),
+      });
+
       mockUserRepository.findOne.mockResolvedValue(mockUser);
       mockUserRepository.softDelete.mockResolvedValue(deletedUser);
 
       const result = await service.deleteUser('test-id');
 
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({ id: 'test-id' });
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+        id: 'test-id',
+      });
       expect(mockUserRepository.softDelete).toHaveBeenCalledWith('test-id');
       expect(result).toEqual(deletedUser);
     });
@@ -316,20 +325,27 @@ describe('UsersService', () => {
     it('should throw NotFoundException when trying to delete non-existent user', async () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.deleteUser('nonexistent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.deleteUser('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
       expect(mockUserRepository.softDelete).not.toHaveBeenCalled();
     });
   });
 
   describe('updateLastLogin', () => {
     it('should update last login timestamp', async () => {
-      const updatedUser = createMockUser({ ...mockUser, lastLogin: Date.now() });
-      
+      const updatedUser = createMockUser({
+        ...mockUser,
+        lastLogin: Date.now(),
+      });
+
       mockUserRepository.updateLastLogin.mockResolvedValue(updatedUser);
 
       const result = await service.updateLastLogin('test-id');
 
-      expect(mockUserRepository.updateLastLogin).toHaveBeenCalledWith('test-id');
+      expect(mockUserRepository.updateLastLogin).toHaveBeenCalledWith(
+        'test-id',
+      );
       expect(result).toEqual(updatedUser);
     });
   });

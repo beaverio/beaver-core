@@ -89,7 +89,7 @@ export class UserRepository
     }
 
     const queryBuilder = this.repo.createQueryBuilder('user');
-    
+
     // Always exclude soft-deleted users
     queryBuilder.andWhere('user.deletedAt IS NULL');
 
@@ -124,10 +124,10 @@ export class UserRepository
   async softDelete(id: string): Promise<User> {
     const now = Date.now();
     await this.repo.update(id, { deletedAt: now });
-    
+
     // Invalidate cache since user is now soft-deleted
     await this.invalidateEntity(id);
-    
+
     const user = await this.repo.findOneBy({ id });
     return user!;
   }
@@ -135,9 +135,9 @@ export class UserRepository
   async updateLastLogin(id: string): Promise<User> {
     const now = Date.now();
     await this.repo.update(id, { lastLogin: now });
-    
+
     const user = await this.repo.findOneBy({ id });
-    
+
     if (user) {
       await this.cacheEntity(user);
     }

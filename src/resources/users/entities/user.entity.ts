@@ -15,7 +15,7 @@ export class User extends BaseEntity {
     nullable: true,
     transformer: {
       to: (value: number | null) => value,
-      from: (value: string | null) => value ? parseInt(value, 10) : null,
+      from: (value: string | null) => (value ? parseInt(value, 10) : null),
     },
   })
   lastLogin: number | null;
@@ -25,7 +25,7 @@ export class User extends BaseEntity {
     nullable: true,
     transformer: {
       to: (value: number | null) => value,
-      from: (value: string | null) => value ? parseInt(value, 10) : null,
+      from: (value: string | null) => (value ? parseInt(value, 10) : null),
     },
   })
   deletedAt: number | null;

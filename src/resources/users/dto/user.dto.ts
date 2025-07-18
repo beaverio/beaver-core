@@ -52,7 +52,7 @@ export class UserResponseDto extends PickType(BaseUserDto, [
 
     dto.createdAt = new Date(createdAtMs).toISOString();
     dto.updatedAt = new Date(updatedAtMs).toISOString();
-    
+
     // Add lastLogin if available
     if (user.lastLogin) {
       const lastLoginMs =
@@ -61,7 +61,7 @@ export class UserResponseDto extends PickType(BaseUserDto, [
           : user.lastLogin;
       dto.lastLogin = new Date(lastLoginMs).toISOString();
     }
-    
+
     return dto;
   }
 

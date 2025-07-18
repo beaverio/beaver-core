@@ -11,6 +11,7 @@ describe('AuthService', () => {
     getUsers: jest.fn(),
     createUser: jest.fn(),
     updateUserInternal: jest.fn(),
+    updateLastLogin: jest.fn(),
   };
 
   const mockSessionService = {

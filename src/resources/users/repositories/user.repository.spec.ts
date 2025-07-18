@@ -609,7 +609,9 @@ describe('UserRepository', () => {
       const result = await repository.findAll({ email: 'test@example.com' });
 
       expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.deletedAt IS NULL');
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.deletedAt IS NULL',
+      );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'user.email = :email',
         {
@@ -624,7 +626,9 @@ describe('UserRepository', () => {
 
       const result = await repository.findAll({ id: 'test-id' });
 
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.deletedAt IS NULL');
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.deletedAt IS NULL',
+      );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', {
         id: 'test-id',
       });
@@ -644,7 +648,10 @@ describe('UserRepository', () => {
     });
 
     it('should not return cached user if deleted', async () => {
-      const deletedUser = createMockUser({ ...mockUser, deletedAt: Date.now() });
+      const deletedUser = createMockUser({
+        ...mockUser,
+        deletedAt: Date.now(),
+      });
       cacheService.get.mockResolvedValue(deletedUser);
       queryBuilder.getOne.mockResolvedValue(null);
 
@@ -662,8 +669,12 @@ describe('UserRepository', () => {
       const result = await repository.findOne({ id: 'test-id' });
 
       expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.deletedAt IS NULL');
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', { id: 'test-id' });
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'user.deletedAt IS NULL',
+      );
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', {
+        id: 'test-id',
+      });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${mockUser.id}`,
         mockUser,
@@ -705,12 +716,17 @@ describe('UserRepository', () => {
 
   describe('softDelete', () => {
     it('should soft delete user and invalidate cache', async () => {
-      const deletedUser = createMockUser({ ...mockUser, deletedAt: expect.any(Number) });
+      const deletedUser = createMockUser({
+        ...mockUser,
+        deletedAt: expect.any(Number),
+      });
       userRepository.findOneBy.mockResolvedValue(deletedUser);
 
       const result = await repository.softDelete('test-id');
 
-      expect(userRepository.update).toHaveBeenCalledWith('test-id', { deletedAt: expect.any(Number) });
+      expect(userRepository.update).toHaveBeenCalledWith('test-id', {
+        deletedAt: expect.any(Number),
+      });
       expect(cacheService.delete).toHaveBeenCalledWith('user:test-id');
       expect(result).toEqual(deletedUser);
     });
@@ -718,12 +734,17 @@ describe('UserRepository', () => {
 
   describe('updateLastLogin', () => {
     it('should update last login and cache user', async () => {
-      const updatedUser = createMockUser({ ...mockUser, lastLogin: expect.any(Number) });
+      const updatedUser = createMockUser({
+        ...mockUser,
+        lastLogin: expect.any(Number),
+      });
       userRepository.findOneBy.mockResolvedValue(updatedUser);
 
       const result = await repository.updateLastLogin('test-id');
 
-      expect(userRepository.update).toHaveBeenCalledWith('test-id', { lastLogin: expect.any(Number) });
+      expect(userRepository.update).toHaveBeenCalledWith('test-id', {
+        lastLogin: expect.any(Number),
+      });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${updatedUser.id}`,
         updatedUser,

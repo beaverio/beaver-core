@@ -56,7 +56,7 @@ export class UsersService implements IUserService {
   async deleteUser(id: string): Promise<User> {
     // Check if user exists first
     await this.getUserById(id);
-    
+
     return await this.userRepository.softDelete(id);
   }
 
