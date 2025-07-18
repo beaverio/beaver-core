@@ -176,7 +176,7 @@ describe('UserRepository', () => {
           defaultLimit: 50,
           maxLimit: 100,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
-          defaultSortBy: [['createdAt', 'DESC']],
+          // defaultSortBy should be removed when query has sortBy parameter
           searchableColumns: ['email'],
           filterableColumns: {
             email: true,
@@ -185,6 +185,11 @@ describe('UserRepository', () => {
           loadEagerRelations: false,
         }),
       );
+
+      // Verify that defaultSortBy is NOT present when query has sortBy
+      const [, , config] = mockPaginate.mock.calls[0];
+      expect(config.defaultSortBy).toBeUndefined();
+
       expect(result.data).toHaveLength(1);
       expect(result.meta.itemsPerPage).toBe(50);
     });
@@ -496,6 +501,73 @@ describe('UserRepository', () => {
         }),
       );
       expect(result.data).toHaveLength(1);
+    });
+
+    it('should properly handle query sortBy parameter overriding defaultSortBy config', async () => {
+      const queryWithASC: PaginateQuery = {
+        limit: 10,
+        sortBy: [['createdAt', 'ASC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      const queryWithDESC: PaginateQuery = {
+        limit: 10,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      await repository.findPaginated(queryWithASC);
+      await repository.findPaginated(queryWithDESC);
+
+      // Verify that paginate was called with configs that DO NOT have defaultSortBy
+      // since our query has sortBy parameter
+      const calls = mockPaginate.mock.calls;
+
+      expect(calls).toHaveLength(2);
+
+      // First call (ASC) should not have defaultSortBy in config
+      const [ascQuery, , ascConfig] = calls[0];
+      expect(ascQuery.sortBy).toEqual([['createdAt', 'ASC']]);
+      expect(ascConfig.defaultSortBy).toBeUndefined();
+
+      // Second call (DESC) should not have defaultSortBy in config
+      const [descQuery, , descConfig] = calls[1];
+      expect(descQuery.sortBy).toEqual([['createdAt', 'DESC']]);
+      expect(descConfig.defaultSortBy).toBeUndefined();
+
+      // Both configs should still have other properties
+      expect(ascConfig.paginationType).toBe(PaginationType.CURSOR);
+      expect(descConfig.paginationType).toBe(PaginationType.CURSOR);
+      expect(ascConfig.sortableColumns).toContain('createdAt');
+      expect(descConfig.sortableColumns).toContain('createdAt');
+    });
+
+    it('should keep defaultSortBy when no query sortBy is provided', async () => {
+      const queryWithoutSort: PaginateQuery = {
+        limit: 10,
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      await repository.findPaginated(queryWithoutSort);
+
+      const [query, , config] = mockPaginate.mock.calls[0];
+
+      // When no sortBy in query, defaultSortBy should be preserved
+      expect(query.sortBy).toBeUndefined();
+      expect(config.defaultSortBy).toEqual([['createdAt', 'DESC']]);
     });
   });
 

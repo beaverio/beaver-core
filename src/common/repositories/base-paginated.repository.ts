@@ -42,6 +42,12 @@ export abstract class BasePaginatedRepository<T extends ObjectLiteral>
       paginationType: PaginationType.CURSOR,
     };
 
+    // If query has sortBy parameter, remove defaultSortBy from config
+    // to ensure query parameter takes precedence
+    if (query.sortBy && query.sortBy.length > 0) {
+      delete cursorConfig.defaultSortBy;
+    }
+
     // Ensure default limit is applied if not provided
     const paginateQuery = {
       ...query,
