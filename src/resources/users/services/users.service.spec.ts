@@ -281,27 +281,6 @@ describe('UsersService', () => {
     });
   });
 
-  describe('getUserById', () => {
-    it('should get user by ID', async () => {
-      mockUserRepository.findOne.mockResolvedValue(mockUser);
-
-      const result = await service.getUserById('test-id');
-
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
-        id: 'test-id',
-      });
-      expect(result).toEqual(mockUser);
-    });
-
-    it('should throw NotFoundException when user not found by ID', async () => {
-      mockUserRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.getUserById('nonexistent-id')).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-  });
-
   describe('deleteUser', () => {
     it('should hard delete user', async () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);

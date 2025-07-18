@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { PaginateConfig, PaginationType } from 'nestjs-paginate';
+import { Repository } from 'typeorm';
+import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 import { BasePaginatedRepository } from '../../../common/repositories/base-paginated.repository';
 import {
   CreateUserDto,
@@ -10,13 +11,11 @@ import {
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
 import { IUserRepository } from '../interfaces/user-repository.interface';
-import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 
 @Injectable()
 export class UserRepository
   extends BasePaginatedRepository<User>
-  implements IUserRepository
-{
+  implements IUserRepository {
   private readonly logger = new Logger(UserRepository.name);
   private readonly CACHE_PREFIX = 'user:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -113,9 +112,7 @@ export class UserRepository
   }
 
   async hardDelete(id: string): Promise<void> {
-    // Invalidate cache before deletion
     await this.invalidateEntity(id);
-    
     await this.repo.delete(id);
   }
 

@@ -38,10 +38,6 @@ export class UsersService implements IUserService {
     return user;
   }
 
-  async getUserById(id: string): Promise<User> {
-    return this.getUser({ id });
-  }
-
   // For user updates through the controller
   async updateUser(id: string, dto: UpdateUserDto): Promise<User> {
     const updateData = { ...dto };
@@ -54,8 +50,7 @@ export class UsersService implements IUserService {
   }
 
   async deleteUser(id: string): Promise<void> {
-    // Check if user exists first
-    await this.getUserById(id);
+    await this.getUser({ id });
 
     await this.userRepository.hardDelete(id);
   }
