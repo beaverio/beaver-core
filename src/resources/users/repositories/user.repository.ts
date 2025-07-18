@@ -15,7 +15,8 @@ import { IUserRepository } from '../interfaces/user-repository.interface';
 @Injectable()
 export class UserRepository
   extends BasePaginatedRepository<User>
-  implements IUserRepository {
+  implements IUserRepository
+{
   private readonly logger = new Logger(UserRepository.name);
   private readonly CACHE_PREFIX = 'user:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes

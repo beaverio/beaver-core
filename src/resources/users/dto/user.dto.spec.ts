@@ -15,6 +15,7 @@ const createMockUser = (overrides: Partial<User> = {}): User => {
     id: '1',
     email: 'user1@example.com',
     password: 'pass1',
+    bio: null,
     createdAt: timestamp,
     updatedAt: timestamp,
     setCreationTimestamps: jest.fn(),
@@ -55,6 +56,17 @@ describe('DTO Behavior Tests', () => {
       const errors = await validate(dto);
       expect(errors.length).toBeGreaterThan(0);
     });
+
+    it('should sanitize email field', () => {
+      const dataWithMaliciousEmail = {
+        email: 'test<script>alert("xss")</script>@example.com',
+        password: 'StrongPass123!',
+      };
+      const dto = plainToClass(CreateUserDto, dataWithMaliciousEmail);
+      expect(dto.email).not.toContain('<script>');
+      expect(dto.email).toContain('test');
+      expect(dto.email).toContain('@example.com');
+    });
   });
 
   describe('UpdateUserDto', () => {
@@ -70,6 +82,42 @@ describe('DTO Behavior Tests', () => {
       const dto = plainToClass(UpdateUserDto, emptyData);
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
+    });
+
+    it('should sanitize bio field', () => {
+      const dataWithMaliciousBio = {
+        bio: 'Hello <script>alert("xss")</script> world! 👋',
+      };
+      const dto = plainToClass(UpdateUserDto, dataWithMaliciousBio);
+      expect(dto.bio).not.toContain('<script>');
+      expect(dto.bio).toContain('Hello');
+      expect(dto.bio).toContain('world!');
+      expect(dto.bio).toContain('👋'); // Emojis should be preserved
+    });
+
+    it('should sanitize email field in updates', () => {
+      const dataWithMaliciousEmail = {
+        email: 'updated<iframe src="javascript:alert(1)"></iframe>@example.com',
+      };
+      const dto = plainToClass(UpdateUserDto, dataWithMaliciousEmail);
+      expect(dto.email).not.toContain('<iframe>');
+      expect(dto.email).not.toContain('javascript:');
+      expect(dto.email).toContain('updated');
+      expect(dto.email).toContain('@example.com');
+    });
+
+    it('should handle multiple sanitized fields', () => {
+      const dataWithMultipleMaliciousFields = {
+        email: 'test<script>alert(1)</script>@example.com',
+        bio: 'Bio with <img src="x" onerror="alert(1)"> malicious content',
+      };
+      const dto = plainToClass(UpdateUserDto, dataWithMultipleMaliciousFields);
+      expect(dto.email).not.toContain('<script>');
+      expect(dto.bio).not.toContain('<img');
+      expect(dto.bio).not.toContain('onerror=');
+      expect(dto.email).toContain('test');
+      expect(dto.bio).toContain('Bio with');
+      expect(dto.bio).toContain('malicious content');
     });
 
     it('should not include refreshToken property for security', () => {
@@ -94,6 +142,16 @@ describe('DTO Behavior Tests', () => {
       const errors = await validate(dto);
       expect(errors).toHaveLength(0);
     });
+
+    it('should sanitize query email parameter', () => {
+      const dataWithMaliciousEmail = {
+        email: 'query<script>alert("xss")</script>@example.com',
+      };
+      const dto = plainToClass(QueryParamsUserDto, dataWithMaliciousEmail);
+      expect(dto.email).not.toContain('<script>');
+      expect(dto.email).toContain('query');
+      expect(dto.email).toContain('@example.com');
+    });
   });
 
   describe('UserResponseDto', () => {
@@ -102,6 +160,7 @@ describe('DTO Behavior Tests', () => {
         id: 'test-uuid',
         email: 'response@example.com',
         password: 'should-not-appear',
+        bio: 'Clean bio content',
         createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
         updatedAt: new Date('2023-01-01T12:00:00Z').getTime(),
       });
@@ -110,10 +169,25 @@ describe('DTO Behavior Tests', () => {
 
       expect(responseDto.id).toBe('test-uuid');
       expect(responseDto.email).toBe('response@example.com');
+      expect(responseDto.bio).toBe('Clean bio content');
       expect(responseDto.createdAt).toBe('2023-01-01T00:00:00.000Z');
       expect(responseDto.updatedAt).toBe('2023-01-01T12:00:00.000Z');
       expect('password' in responseDto).toBe(false);
       expect('refreshToken' in responseDto).toBe(false);
+    });
+
+    it('should handle users without bio', () => {
+      const user = createMockUser({
+        id: 'test-uuid',
+        email: 'response@example.com',
+        bio: null,
+        createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
+        updatedAt: new Date('2023-01-01T12:00:00Z').getTime(),
+      });
+
+      const responseDto = UserResponseDto.fromEntity(user);
+
+      expect(responseDto.bio).toBe(null);
     });
 
     it('should transform multiple entities correctly', () => {
@@ -124,6 +198,7 @@ describe('DTO Behavior Tests', () => {
           id: '1',
           email: 'user1@example.com',
           password: 'pass1',
+          bio: null,
           createdAt: timestamp,
           updatedAt: timestamp,
           setCreationTimestamps: jest.fn(),
@@ -151,6 +226,7 @@ describe('DTO Behavior Tests', () => {
           id: '1',
           email: 'user1@example.com',
           password: 'pass1',
+          bio: 'First user bio',
           createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
           updatedAt: new Date('2023-01-01T12:00:00Z').getTime(),
         }),
@@ -158,6 +234,7 @@ describe('DTO Behavior Tests', () => {
           id: '2',
           email: 'user2@example.com',
           password: 'pass2',
+          bio: null,
           createdAt: new Date('2023-01-02T00:00:00Z').getTime(),
           updatedAt: new Date('2023-01-02T12:00:00Z').getTime(),
         }),
@@ -167,9 +244,64 @@ describe('DTO Behavior Tests', () => {
 
       expect(responseDtos).toHaveLength(2);
       expect(responseDtos[0].id).toBe('1');
+      expect(responseDtos[0].bio).toBe('First user bio');
       expect(responseDtos[1].email).toBe('user2@example.com');
+      expect(responseDtos[1].bio).toBe(null);
       expect(responseDtos[0].createdAt).toBe('2023-01-01T00:00:00.000Z');
       expect(responseDtos[1].updatedAt).toBe('2023-01-02T12:00:00.000Z');
+    });
+  });
+
+  describe('Sanitization Integration Tests', () => {
+    it('should handle the example from the issue requirements', () => {
+      const maliciousInput = {
+        bio: "Hello <script>alert('xss')</script> world!",
+      };
+      const dto = plainToClass(UpdateUserDto, maliciousInput);
+
+      // Should match the expected output from the issue
+      expect(dto.bio).toBe(
+        "Hello &lt;script&gt;alert('xss')&lt;/script&gt; world!",
+      );
+      expect(dto.bio).not.toContain('<script>');
+    });
+
+    it('should preserve emojis as required', () => {
+      const inputWithEmojis = {
+        bio: 'Hello 👋 world! 🌍 Categories coming soon! 🎉',
+      };
+      const dto = plainToClass(UpdateUserDto, inputWithEmojis);
+
+      expect(dto.bio).toBe(inputWithEmojis.bio);
+      expect(dto.bio).toContain('👋');
+      expect(dto.bio).toContain('🌍');
+      expect(dto.bio).toContain('🎉');
+    });
+
+    it('should handle edge cases correctly', () => {
+      const edgeCases = [
+        { input: '', expected: '' },
+        { input: '   ', expected: '   ' },
+        { input: null, expected: null },
+        { input: undefined, expected: undefined },
+      ];
+
+      edgeCases.forEach(({ input, expected }) => {
+        const dto = plainToClass(UpdateUserDto, { bio: input });
+        expect(dto.bio).toBe(expected);
+      });
+    });
+
+    it('should handle unicode characters correctly', () => {
+      const unicodeInput = {
+        bio: 'Unicode test: αβγδε 中文 العربية',
+      };
+      const dto = plainToClass(UpdateUserDto, unicodeInput);
+
+      expect(dto.bio).toBe(unicodeInput.bio);
+      expect(dto.bio).toContain('αβγδε');
+      expect(dto.bio).toContain('中文');
+      expect(dto.bio).toContain('العربية');
     });
   });
 });
