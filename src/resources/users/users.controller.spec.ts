@@ -16,7 +16,6 @@ describe('UsersController', () => {
       createdAt: now,
       updatedAt: now,
       lastLogin: null,
-      deletedAt: null,
       setCreationTimestamps: jest.fn(),
       setUpdateTimestamp: jest.fn(),
       ...overrides,
@@ -62,7 +61,6 @@ describe('UsersController', () => {
   const mockUserService = {
     getUsers: jest.fn(),
     getUser: jest.fn(),
-    getUserById: jest.fn(),
     updateUser: jest.fn(),
     deleteUser: jest.fn(),
     createUser: jest.fn(),
@@ -223,7 +221,6 @@ describe('UsersController', () => {
 
       const result = await controller.updateUser(
         mockUser,
-        mockUser.id,
         updateDto,
       );
 
@@ -234,56 +231,16 @@ describe('UsersController', () => {
       expect(result.email).toBe('updated@example.com');
       expect(result).not.toHaveProperty('password');
     });
-
-    it('should throw ForbiddenException when user tries to update another user', async () => {
-      const updateDto = { email: 'updated@example.com' };
-      const otherUserId = 'other-user-id';
-
-      await expect(
-        controller.updateUser(mockUser, otherUserId, updateDto),
-      ).rejects.toThrow('You can only update your own profile');
-
-      expect(mockUserService.updateUser).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('getUserById', () => {
-    it('should return a user by ID', async () => {
-      mockUserService.getUserById.mockResolvedValue(mockUser);
-
-      const result = await controller.getUserById(mockUser.id);
-
-      expect(mockUserService.getUserById).toHaveBeenCalledWith(mockUser.id);
-      expect(result.id).toBe(mockUser.id);
-      expect(result.email).toBe(mockUser.email);
-      expect(result).not.toHaveProperty('password');
-    });
   });
 
   describe('deleteUser', () => {
     it('should delete a user when user is deleting themselves', async () => {
-      const deletedUser = createMockUser({
-        ...mockUser,
-        deletedAt: Date.now(),
-      });
+      mockUserService.deleteUser.mockResolvedValue(undefined);
 
-      mockUserService.deleteUser.mockResolvedValue(deletedUser);
-
-      const result = await controller.deleteUser(mockUser, mockUser.id);
+      const result = await controller.deleteUser(mockUser);
 
       expect(mockUserService.deleteUser).toHaveBeenCalledWith(mockUser.id);
-      expect(result.id).toBe(mockUser.id);
-      expect(result).not.toHaveProperty('password');
-    });
-
-    it('should throw ForbiddenException when user tries to delete another user', async () => {
-      const otherUserId = 'other-user-id';
-
-      await expect(
-        controller.deleteUser(mockUser, otherUserId),
-      ).rejects.toThrow('You can only delete your own profile');
-
-      expect(mockUserService.deleteUser).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
     });
   });
 });

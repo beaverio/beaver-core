@@ -39,7 +39,6 @@ describe('UserRepository', () => {
       createdAt: timestamp,
       updatedAt: timestamp,
       lastLogin: null,
-      deletedAt: null,
       setCreationTimestamps: jest.fn(),
       setUpdateTimestamp: jest.fn(),
       ...overrides,
@@ -69,7 +68,6 @@ describe('UserRepository', () => {
       createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
       updatedAt: new Date('2023-01-01T00:00:00Z').getTime(),
       lastLogin: null,
-      deletedAt: null,
     }),
     createMockUser({
       id: 'user-2',
@@ -77,7 +75,6 @@ describe('UserRepository', () => {
       createdAt: new Date('2023-01-02T00:00:00Z').getTime(),
       updatedAt: new Date('2023-01-02T00:00:00Z').getTime(),
       lastLogin: null,
-      deletedAt: null,
     }),
   ];
 
@@ -121,6 +118,7 @@ describe('UserRepository', () => {
       findOne: jest.fn(),
       findOneBy: jest.fn(),
       update: jest.fn(),
+      delete: jest.fn(),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     } as unknown as jest.Mocked<Repository<User>>;
 
@@ -610,9 +608,6 @@ describe('UserRepository', () => {
 
       expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        'user.deletedAt IS NULL',
-      );
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'user.email = :email',
         {
           email: 'test@example.com',
@@ -626,9 +621,6 @@ describe('UserRepository', () => {
 
       const result = await repository.findAll({ id: 'test-id' });
 
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        'user.deletedAt IS NULL',
-      );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', {
         id: 'test-id',
       });
@@ -637,7 +629,7 @@ describe('UserRepository', () => {
   });
 
   describe('findOne', () => {
-    it('should return cached user if available and not deleted', async () => {
+    it('should return cached user if available', async () => {
       cacheService.get.mockResolvedValue(mockUser);
 
       const result = await repository.findOne({ id: 'test-id' });
@@ -647,21 +639,6 @@ describe('UserRepository', () => {
       expect(result).toEqual(mockUser);
     });
 
-    it('should not return cached user if deleted', async () => {
-      const deletedUser = createMockUser({
-        ...mockUser,
-        deletedAt: Date.now(),
-      });
-      cacheService.get.mockResolvedValue(deletedUser);
-      queryBuilder.getOne.mockResolvedValue(null);
-
-      const result = await repository.findOne({ id: 'test-id' });
-
-      expect(cacheService.get).toHaveBeenCalledWith('user:test-id');
-      expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(result).toBeNull();
-    });
-
     it('should fetch from database and cache if not in cache', async () => {
       cacheService.get.mockResolvedValue(null);
       queryBuilder.getOne.mockResolvedValue(mockUser);
@@ -669,9 +646,6 @@ describe('UserRepository', () => {
       const result = await repository.findOne({ id: 'test-id' });
 
       expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        'user.deletedAt IS NULL',
-      );
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', {
         id: 'test-id',
       });
@@ -714,21 +688,12 @@ describe('UserRepository', () => {
     });
   });
 
-  describe('softDelete', () => {
-    it('should soft delete user and invalidate cache', async () => {
-      const deletedUser = createMockUser({
-        ...mockUser,
-        deletedAt: expect.any(Number),
-      });
-      userRepository.findOneBy.mockResolvedValue(deletedUser);
+  describe('hardDelete', () => {
+    it('should hard delete user and invalidate cache', async () => {
+      await repository.hardDelete('test-id');
 
-      const result = await repository.softDelete('test-id');
-
-      expect(userRepository.update).toHaveBeenCalledWith('test-id', {
-        deletedAt: expect.any(Number),
-      });
       expect(cacheService.delete).toHaveBeenCalledWith('user:test-id');
-      expect(result).toEqual(deletedUser);
+      expect(userRepository.delete).toHaveBeenCalledWith('test-id');
     });
   });
 

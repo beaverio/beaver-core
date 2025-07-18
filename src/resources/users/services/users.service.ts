@@ -53,11 +53,11 @@ export class UsersService implements IUserService {
     return await this.userRepository.update(id, updateData);
   }
 
-  async deleteUser(id: string): Promise<User> {
+  async deleteUser(id: string): Promise<void> {
     // Check if user exists first
     await this.getUserById(id);
 
-    return await this.userRepository.softDelete(id);
+    await this.userRepository.hardDelete(id);
   }
 
   async updateLastLogin(id: string): Promise<User> {

@@ -14,6 +14,6 @@ export interface IUserRepository
   findAll(query: QueryParamsUserDto): Promise<User[]>;
   findOne(query: QueryParamsUserDto): Promise<User | null>;
   update(id: string, dto: UpdateUserDto): Promise<User>;
-  softDelete(id: string): Promise<User>;
+  hardDelete(id: string): Promise<void>;
   updateLastLogin(id: string): Promise<User>;
 }

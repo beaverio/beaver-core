@@ -17,7 +17,6 @@ describe('UsersService', () => {
       createdAt: timestamp,
       updatedAt: timestamp,
       lastLogin: null,
-      deletedAt: null,
       setCreationTimestamps: jest.fn(),
       setUpdateTimestamp: jest.fn(),
       ...overrides,
@@ -66,7 +65,7 @@ describe('UsersService', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     findPaginated: jest.fn(),
-    softDelete: jest.fn(),
+    hardDelete: jest.fn(),
     updateLastLogin: jest.fn(),
   };
 
@@ -304,22 +303,17 @@ describe('UsersService', () => {
   });
 
   describe('deleteUser', () => {
-    it('should soft delete user', async () => {
-      const deletedUser = createMockUser({
-        ...mockUser,
-        deletedAt: Date.now(),
-      });
-
+    it('should hard delete user', async () => {
       mockUserRepository.findOne.mockResolvedValue(mockUser);
-      mockUserRepository.softDelete.mockResolvedValue(deletedUser);
+      mockUserRepository.hardDelete.mockResolvedValue(undefined);
 
       const result = await service.deleteUser('test-id');
 
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
         id: 'test-id',
       });
-      expect(mockUserRepository.softDelete).toHaveBeenCalledWith('test-id');
-      expect(result).toEqual(deletedUser);
+      expect(mockUserRepository.hardDelete).toHaveBeenCalledWith('test-id');
+      expect(result).toBeUndefined();
     });
 
     it('should throw NotFoundException when trying to delete non-existent user', async () => {
@@ -328,7 +322,7 @@ describe('UsersService', () => {
       await expect(service.deleteUser('nonexistent-id')).rejects.toThrow(
         NotFoundException,
       );
-      expect(mockUserRepository.softDelete).not.toHaveBeenCalled();
+      expect(mockUserRepository.hardDelete).not.toHaveBeenCalled();
     });
   });
 

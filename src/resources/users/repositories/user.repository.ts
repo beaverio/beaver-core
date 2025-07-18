@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 import { PaginateConfig, PaginationType } from 'nestjs-paginate';
 import { BasePaginatedRepository } from '../../../common/repositories/base-paginated.repository';
 import {
@@ -47,9 +47,6 @@ export class UserRepository
       },
       loadEagerRelations: false,
       paginationType: PaginationType.LIMIT_AND_OFFSET,
-      where: {
-        deletedAt: IsNull(), // Exclude soft-deleted users
-      },
     };
   }
 
@@ -63,9 +60,6 @@ export class UserRepository
 
   async findAll(where: QueryParamsUserDto): Promise<User[]> {
     const queryBuilder = this.repo.createQueryBuilder('user');
-
-    // Always exclude soft-deleted users
-    queryBuilder.andWhere('user.deletedAt IS NULL');
 
     if (where.email) {
       queryBuilder.andWhere('user.email = :email', { email: where.email });
@@ -82,16 +76,13 @@ export class UserRepository
     // Try cache first
     if (where.id) {
       const cached = await this.getCachedEntity(where.id);
-      if (cached && !cached.deletedAt) {
+      if (cached) {
         this.logger.debug(`Cache hit for user: ${where.id}`);
         return cached;
       }
     }
 
     const queryBuilder = this.repo.createQueryBuilder('user');
-
-    // Always exclude soft-deleted users
-    queryBuilder.andWhere('user.deletedAt IS NULL');
 
     if (where.email) {
       queryBuilder.andWhere('user.email = :email', { email: where.email });
@@ -121,15 +112,11 @@ export class UserRepository
     return user!;
   }
 
-  async softDelete(id: string): Promise<User> {
-    const now = Date.now();
-    await this.repo.update(id, { deletedAt: now });
-
-    // Invalidate cache since user is now soft-deleted
+  async hardDelete(id: string): Promise<void> {
+    // Invalidate cache before deletion
     await this.invalidateEntity(id);
-
-    const user = await this.repo.findOneBy({ id });
-    return user!;
+    
+    await this.repo.delete(id);
   }
 
   async updateLastLogin(id: string): Promise<User> {

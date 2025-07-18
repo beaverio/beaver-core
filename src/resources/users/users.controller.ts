@@ -3,9 +3,9 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
-  Param,
-  ParseUUIDPipe,
   Patch,
   UseGuards
 } from '@nestjs/common';
@@ -43,9 +43,9 @@ export class UsersController {
   }
 
   @Delete('self')
-  async deleteUser(@CurrentUser() user: User,): Promise<UserResponseDto> {
-    const deletedUser = await this.usersService.deleteUser(user.id);
-    return UserResponseDto.fromEntity(deletedUser);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteUser(@CurrentUser() user: User,): Promise<void> {
+    await this.usersService.deleteUser(user.id);
   }
 
   @Patch('self')
@@ -55,13 +55,5 @@ export class UsersController {
   ): Promise<UserResponseDto> {
     const updatedUser = await this.usersService.updateUser(user.id, dto);
     return UserResponseDto.fromEntity(updatedUser);
-  }
-
-  @Get(':id')
-  async getUserById(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<UserResponseDto> {
-    const user = await this.usersService.getUserById(id);
-    return UserResponseDto.fromEntity(user);
   }
 }
