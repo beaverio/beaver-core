@@ -23,16 +23,13 @@ export class UsersController {
   constructor(
     @Inject('IUserService')
     private readonly usersService: IUserService,
-  ) {}
+  ) { }
 
   @Get()
   async getUsers(
     @Paginate() query: PaginateQuery,
   ): Promise<Paginated<UserResponseDto>> {
-    // Always use pagination with default limit of 50
     const result = await this.usersService.getUsers(query);
-
-    // Transform User entities to UserResponseDto
     const transformedData = UserResponseDto.fromEntities(result.data);
 
     return {
@@ -60,7 +57,6 @@ export class UsersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto,
   ): Promise<UserResponseDto> {
-    // Users can only update themselves
     if (currentUser.id !== id) {
       throw new ForbiddenException('You can only update your own profile');
     }
@@ -74,7 +70,6 @@ export class UsersController {
     @CurrentUser() currentUser: User,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<UserResponseDto> {
-    // Users can only delete themselves
     if (currentUser.id !== id) {
       throw new ForbiddenException('You can only delete your own profile');
     }
