@@ -7,7 +7,7 @@ export const rateLimitConfig = (
   throttlers: [
     {
       name: 'default',
-      ttl: configService.get<number>('RATE_LIMIT_TTL', 60) * 1000, // Convert seconds to milliseconds
+      ttl: configService.get<number>('RATE_LIMIT_TTL', 60) * 1000,
       limit: configService.get<number>('RATE_LIMIT_LIMIT', 100),
     },
   ],
