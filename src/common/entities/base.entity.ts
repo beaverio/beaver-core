@@ -21,8 +21,8 @@ export abstract class BaseEntity {
     nullable: false,
     transformer: {
       to: (value: number) => value,
-      from: (value: string) => parseInt(value, 10)
-    }
+      from: (value: string) => parseInt(value, 10),
+    },
   })
   createdAt: number;
 
@@ -31,8 +31,8 @@ export abstract class BaseEntity {
     nullable: false,
     transformer: {
       to: (value: number) => value,
-      from: (value: string) => parseInt(value, 10)
-    }
+      from: (value: string) => parseInt(value, 10),
+    },
   })
   updatedAt: number;
 

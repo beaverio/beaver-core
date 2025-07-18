@@ -6,13 +6,36 @@ import { User } from './entities/user.entity';
 describe('UsersController', () => {
   let controller: UsersController;
 
-  const mockUser: User = {
-    id: 'test-id',
-    email: 'test@example.com',
-    password: 'hashed-password',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  // Helper function to create mock User with all required properties
+  const createMockUser = (overrides: Partial<User> = {}): User => {
+    const now = Date.now();
+    const baseUser = {
+      id: 'test-id',
+      email: 'test@example.com',
+      password: 'hashed-password',
+      createdAt: now,
+      updatedAt: now,
+      setCreationTimestamps: jest.fn(),
+      setUpdateTimestamp: jest.fn(),
+      ...overrides,
+    };
+
+    // Add getter properties with proper typing
+    Object.defineProperty(baseUser, 'createdAtDate', {
+      get: function (this: { createdAt: number }) {
+        return new Date(this.createdAt);
+      },
+    });
+    Object.defineProperty(baseUser, 'updatedAtDate', {
+      get: function (this: { updatedAt: number }) {
+        return new Date(this.updatedAt);
+      },
+    });
+
+    return baseUser as User;
   };
+
+  const mockUser = createMockUser();
 
   const mockPaginatedResult: Paginated<User> = {
     data: [mockUser],
@@ -122,6 +145,58 @@ describe('UsersController', () => {
       expect(mockUserService.getUsers).toHaveBeenCalledWith(query);
       expect(result.data).toBeDefined();
     });
+
+    it('should handle sorting by different columns ASC/DESC', async () => {
+      const queryAsc: PaginateQuery = {
+        page: 1,
+        limit: 50,
+        sortBy: [['createdAt', 'ASC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      const queryDesc: PaginateQuery = {
+        page: 1,
+        limit: 50,
+        sortBy: [['updatedAt', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockUserService.getUsers.mockResolvedValue(mockPaginatedResult);
+
+      const resultAsc = await controller.getUsers(queryAsc);
+      const resultDesc = await controller.getUsers(queryDesc);
+
+      expect(mockUserService.getUsers).toHaveBeenCalledWith(queryAsc);
+      expect(mockUserService.getUsers).toHaveBeenCalledWith(queryDesc);
+      expect(resultAsc.data).toBeDefined();
+      expect(resultDesc.data).toBeDefined();
+    });
+
+    it('should handle complex filtering and search', async () => {
+      const query: PaginateQuery = {
+        page: 1,
+        limit: 25,
+        sortBy: [['email', 'ASC']],
+        searchBy: ['email'],
+        search: 'john',
+        filter: { email: 'john@example.com' },
+        path: '',
+      };
+
+      mockUserService.getUsers.mockResolvedValue(mockPaginatedResult);
+
+      const result = await controller.getUsers(query);
+
+      expect(mockUserService.getUsers).toHaveBeenCalledWith(query);
+      expect(result.data).toBeDefined();
+      expect(result.meta).toBeDefined();
+    });
   });
 
   describe('getSelf', () => {
@@ -137,7 +212,7 @@ describe('UsersController', () => {
   describe('updateUser', () => {
     it('should update a user', async () => {
       const updateDto = { email: 'updated@example.com' };
-      const updatedUser = { ...mockUser, ...updateDto };
+      const updatedUser = createMockUser({ ...mockUser, ...updateDto });
 
       mockUserService.updateUser.mockResolvedValue(updatedUser);
 

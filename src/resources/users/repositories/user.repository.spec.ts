@@ -29,29 +29,50 @@ describe('UserRepository', () => {
   let cacheService: jest.Mocked<ICacheService>;
   let queryBuilder: jest.Mocked<SelectQueryBuilder<User>>;
 
-  const mockUser: User = {
-    id: 'test-id',
-    email: 'test@example.com',
-    password: 'hashedPassword',
-    createdAt: new Date('2023-01-01T00:00:00Z'),
-    updatedAt: new Date('2023-01-01T00:00:00Z'),
+  // Helper function to create mock User with all required properties
+  const createMockUser = (overrides: Partial<User> = {}): User => {
+    const timestamp = new Date('2023-01-01T00:00:00Z').getTime();
+    const baseUser = {
+      id: 'test-id',
+      email: 'test@example.com',
+      password: 'hashedPassword',
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      setCreationTimestamps: jest.fn(),
+      setUpdateTimestamp: jest.fn(),
+      ...overrides,
+    };
+
+    // Add getter properties with proper typing
+    Object.defineProperty(baseUser, 'createdAtDate', {
+      get: function (this: { createdAt: number }) {
+        return new Date(this.createdAt);
+      },
+    });
+    Object.defineProperty(baseUser, 'updatedAtDate', {
+      get: function (this: { updatedAt: number }) {
+        return new Date(this.updatedAt);
+      },
+    });
+
+    return baseUser as User;
   };
 
+  const mockUser = createMockUser();
+
   const mockUsers: User[] = [
-    {
+    createMockUser({
       id: 'user-1',
       email: 'user1@example.com',
-      password: 'hashedPassword',
-      createdAt: new Date('2023-01-01T00:00:00Z'),
-      updatedAt: new Date('2023-01-01T00:00:00Z'),
-    },
-    {
+      createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
+      updatedAt: new Date('2023-01-01T00:00:00Z').getTime(),
+    }),
+    createMockUser({
       id: 'user-2',
       email: 'user2@example.com',
-      password: 'hashedPassword',
-      createdAt: new Date('2023-01-02T00:00:00Z'),
-      updatedAt: new Date('2023-01-02T00:00:00Z'),
-    },
+      createdAt: new Date('2023-01-02T00:00:00Z').getTime(),
+      updatedAt: new Date('2023-01-02T00:00:00Z').getTime(),
+    }),
   ];
 
   const mockPaginatedResult: Paginated<User> = {
@@ -89,6 +110,7 @@ describe('UserRepository', () => {
     // Create mocked repository
     userRepository = {
       save: jest.fn(),
+      create: jest.fn(),
       findOne: jest.fn(),
       findOneBy: jest.fn(),
       update: jest.fn(),
@@ -152,13 +174,280 @@ describe('UserRepository', () => {
         expect.objectContaining({
           paginationType: PaginationType.CURSOR,
           defaultLimit: 50,
-          sortableColumns: ['id', 'email', 'createdAt', 'updatedAt'],
-          defaultSortBy: [['id', 'ASC']],
+          maxLimit: 100,
+          sortableColumns: ['createdAt', 'updatedAt', 'id'],
+          defaultSortBy: [['createdAt', 'DESC']],
+          searchableColumns: ['email'],
+          filterableColumns: {
+            email: true,
+            id: true,
+          },
+          loadEagerRelations: false,
         }),
       );
       expect(result.data).toHaveLength(1);
       expect(result.meta.itemsPerPage).toBe(50);
-      expect(result.meta.cursor).toBeDefined();
+    });
+
+    it('should support filtering by email', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: { email: 'test@example.com' },
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          filterableColumns: {
+            email: true,
+            id: true,
+          },
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support filtering by id', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: { id: 'test-id' },
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          filterableColumns: {
+            email: true,
+            id: true,
+          },
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support email search', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: ['email'],
+        search: 'test',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          searchableColumns: ['email'],
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support sorting by createdAt ASC', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['createdAt', 'ASC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          sortableColumns: ['createdAt', 'updatedAt', 'id'],
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support sorting by createdAt DESC', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          sortableColumns: ['createdAt', 'updatedAt', 'id'],
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support sorting by updatedAt ASC', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['updatedAt', 'ASC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          sortableColumns: ['createdAt', 'updatedAt', 'id'],
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support sorting by updatedAt DESC', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['updatedAt', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          sortableColumns: ['createdAt', 'updatedAt', 'id'],
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support sorting by id ASC', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['id', 'ASC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          sortableColumns: ['createdAt', 'updatedAt', 'id'],
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support sorting by id DESC', async () => {
+      const query: PaginateQuery = {
+        limit: 50,
+        sortBy: [['id', 'DESC']],
+        searchBy: [],
+        search: '',
+        filter: {},
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          sortableColumns: ['createdAt', 'updatedAt', 'id'],
+        }),
+      );
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should support combined filtering and sorting', async () => {
+      const query: PaginateQuery = {
+        limit: 25,
+        sortBy: [['createdAt', 'DESC']],
+        searchBy: ['email'],
+        search: 'test',
+        filter: { email: 'test@example.com' },
+        path: '',
+      };
+
+      mockPaginate.mockResolvedValue(mockPaginatedResult);
+
+      const result = await repository.findPaginated(query);
+
+      expect(mockPaginate).toHaveBeenCalledWith(
+        query,
+        userRepository,
+        expect.objectContaining({
+          paginationType: PaginationType.CURSOR,
+          sortableColumns: ['createdAt', 'updatedAt', 'id'],
+          searchableColumns: ['email'],
+          filterableColumns: {
+            email: true,
+            id: true,
+          },
+        }),
+      );
+      expect(result.data).toHaveLength(1);
     });
 
     it('should apply default limit when not provided', async () => {
@@ -217,11 +506,14 @@ describe('UserRepository', () => {
         password: 'password123',
       };
 
+      const createdUser = createMockUser({ email: createUserDto.email });
+      userRepository.create.mockReturnValue(createdUser);
       userRepository.save.mockResolvedValue(mockUser);
 
       const result = await repository.create(createUserDto);
 
-      expect(userRepository.save).toHaveBeenCalledWith(createUserDto);
+      expect(userRepository.create).toHaveBeenCalledWith(createUserDto);
+      expect(userRepository.save).toHaveBeenCalledWith(createdUser);
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${mockUser.id}`,
         mockUser,
@@ -301,7 +593,7 @@ describe('UserRepository', () => {
   describe('update', () => {
     it('should update and cache user', async () => {
       const updateDto = { email: 'updated@example.com' };
-      const updatedUser = { ...mockUser, ...updateDto };
+      const updatedUser = createMockUser({ ...mockUser, ...updateDto });
 
       userRepository.findOneBy.mockResolvedValue(updatedUser);
 
