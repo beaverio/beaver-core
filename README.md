@@ -63,6 +63,52 @@ export class UpdateUserDto extends PartialType(PickType(BaseUserDto, ['email', '
 - **Type Safety**: Full TypeScript support with IntelliSense
 - **Scalability**: Easy to extend for new entities and use cases
 
+## Rate Limiting
+
+This application implements global rate limiting to protect against abuse, brute-force attacks, and excessive traffic. The rate limiting is implemented using `@nestjs/throttler` and applies to all endpoints by default.
+
+### Configuration
+
+Rate limiting can be configured using environment variables:
+
+- `RATE_LIMIT_TTL`: Time window in seconds (default: 60)
+- `RATE_LIMIT_LIMIT`: Maximum number of requests per time window (default: 100)
+
+### Example Configuration
+
+```bash
+# .env file
+RATE_LIMIT_TTL=60        # 60 seconds
+RATE_LIMIT_LIMIT=100     # 100 requests per minute
+```
+
+### Response Headers
+
+When rate limiting is active, the following headers are included in responses:
+
+- `X-RateLimit-Limit`: Maximum number of requests allowed
+- `X-RateLimit-Remaining`: Number of requests remaining in the current window
+- `X-RateLimit-Reset`: Time when the rate limit window resets
+
+### Rate Limit Exceeded Response
+
+When the rate limit is exceeded, the API returns a `429 Too Many Requests` response:
+
+```json
+{
+  "statusCode": 429,
+  "message": "Too Many Requests",
+  "error": "Too Many Requests"
+}
+```
+
+### Customizing Rate Limits
+
+The rate limiting implementation supports future enhancements such as:
+- Per-user or per-IP specific limits
+- Custom rate limits for sensitive endpoints (login, signup)
+- Distributed rate limiting with Redis backend
+
 ## Project setup
 
 ```bash
