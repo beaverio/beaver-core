@@ -29,7 +29,7 @@ export const NO_SANITIZE_METADATA_KEY = 'sanitize:skip';
  * }
  */
 export function Sanitize(options: SanitizationOptions = {}): PropertyDecorator {
-  return function (target: any, propertyKey: string | symbol) {
+  return function (target: object, propertyKey: string | symbol) {
     // Set metadata for the SanitizationPipe
     Reflect.defineMetadata(SANITIZE_METADATA_KEY, options, target, propertyKey);
 
@@ -111,7 +111,7 @@ export function SanitizeRichText(): PropertyDecorator {
  * }
  */
 export function NoSanitize(): PropertyDecorator {
-  return function (target: any, propertyKey: string | symbol) {
+  return function (target: object, propertyKey: string | symbol) {
     Reflect.defineMetadata(NO_SANITIZE_METADATA_KEY, true, target, propertyKey);
   };
 }

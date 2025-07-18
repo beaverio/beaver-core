@@ -4,7 +4,21 @@ import {
   NO_SANITIZE_METADATA_KEY,
   SANITIZE_METADATA_KEY,
 } from '../decorators/sanitize.decorator';
-import { SanitizationUtil } from '../utils/sanitization.util';
+import {
+  SanitizationUtil,
+  SanitizationOptions,
+} from '../utils/sanitization.util';
+
+// Type for constructor functions
+type Constructor = new (...args: any[]) => any;
+
+// Type for objects that can be sanitized
+type SanitizableObject = Record<string, unknown>;
+
+// Type guard to check if value is a sanitizable object
+function isSanitizableObject(value: unknown): value is SanitizableObject {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
 
 /**
  * Global sanitization pipe that automatically sanitizes all string fields
@@ -43,17 +57,28 @@ export class SanitizationPipe implements PipeTransform {
    * @param targetClass - Target DTO class with metadata
    * @returns Sanitized object
    */
-  private sanitizeObject(obj: unknown, targetClass: any): any {
+  private sanitizeObject(obj: unknown, targetClass: Constructor): any {
     if (!obj || typeof obj !== 'object') {
       return obj;
     }
 
     // Handle arrays
     if (Array.isArray(obj)) {
-      return obj.map((item) => this.sanitizeObject(item, targetClass));
+      const sanitizedArray = obj.map((item) =>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        this.sanitizeObject(item, targetClass),
+      );
+      // Type assertion is safe here since we're returning the same shape
+
+      return sanitizedArray as any;
     }
 
-    const sanitizedObj = { ...obj } as Record<string, any>;
+    // Ensure we have a sanitizable object
+    if (!isSanitizableObject(obj)) {
+      return obj;
+    }
+
+    const sanitizedObj: SanitizableObject = { ...obj };
 
     // Get all property names from the object
     for (const key in sanitizedObj) {
@@ -84,14 +109,24 @@ export class SanitizationPipe implements PipeTransform {
 
         // Apply sanitization to string values
         if (typeof value === 'string') {
-          const options = customOptions || { allowEmojis: true }; // Default options
+          const options: SanitizationOptions = (typeof customOptions ===
+          'object'
+            ? customOptions
+            : null) || {
+            allowEmojis: true,
+          }; // Default options
           sanitizedObj[key] = SanitizationUtil.sanitize(value, options);
         }
         // Handle arrays of strings
         else if (Array.isArray(value)) {
-          sanitizedObj[key] = value.map((item) => {
+          sanitizedObj[key] = value.map((item: unknown) => {
             if (typeof item === 'string') {
-              const options = customOptions || { allowEmojis: true };
+              const options: SanitizationOptions = (typeof customOptions ===
+              'object'
+                ? customOptions
+                : null) || {
+                allowEmojis: true,
+              };
               return SanitizationUtil.sanitize(item, options);
             }
             return item;
@@ -116,10 +151,20 @@ export class SanitizationPipe implements PipeTransform {
    */
   private getMetadata(
     metadataKey: string,
-    target: any,
+    target: Constructor,
     propertyKey: string,
-  ): any {
-    return Reflect.getMetadata(metadataKey, target.prototype, propertyKey);
+  ): SanitizationOptions | boolean | undefined {
+    if (!target || typeof target !== 'function' || !target.prototype) {
+      return undefined;
+    }
+    const targetPrototype = target.prototype as object;
+    const metadata: unknown = Reflect.getMetadata(
+      metadataKey,
+      targetPrototype,
+      propertyKey,
+    );
+    // Type assertion is safe here as we control what we store in metadata
+    return metadata as SanitizationOptions | boolean | undefined;
   }
 
   /**
@@ -127,8 +172,13 @@ export class SanitizationPipe implements PipeTransform {
    * @param type - Type to check
    * @returns true if primitive type
    */
-  private isPrimitiveType(type: any): boolean {
-    const primitiveTypes = [String, Boolean, Number, Array, Object];
-    return primitiveTypes.includes(type);
+  private isPrimitiveType(type: Constructor): boolean {
+    return (
+      type === String ||
+      type === Boolean ||
+      type === Number ||
+      type === Array ||
+      type === Object
+    );
   }
 }
