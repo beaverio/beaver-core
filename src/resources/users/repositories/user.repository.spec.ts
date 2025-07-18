@@ -172,7 +172,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           defaultLimit: 50,
           maxLimit: 100,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
@@ -186,9 +186,9 @@ describe('UserRepository', () => {
         }),
       );
 
-      // Verify that defaultSortBy is NOT present when query has sortBy
+      // Verify that defaultSortBy is still present with offset pagination
       const [, , config] = mockPaginate.mock.calls[0];
-      expect(config.defaultSortBy).toBeUndefined();
+      expect(config.defaultSortBy).toEqual([['createdAt', 'DESC']]);
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.itemsPerPage).toBe(50);
@@ -212,7 +212,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           filterableColumns: {
             email: true,
             id: true,
@@ -240,7 +240,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           filterableColumns: {
             email: true,
             id: true,
@@ -268,7 +268,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           searchableColumns: ['email'],
         }),
       );
@@ -293,7 +293,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
         }),
       );
@@ -318,7 +318,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
         }),
       );
@@ -343,7 +343,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
         }),
       );
@@ -368,7 +368,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
         }),
       );
@@ -393,7 +393,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
         }),
       );
@@ -418,7 +418,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
         }),
       );
@@ -443,7 +443,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
           searchableColumns: ['email'],
           filterableColumns: {
@@ -474,7 +474,7 @@ describe('UserRepository', () => {
         expect.objectContaining({ limit: 50 }),
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
         }),
       );
     });
@@ -497,7 +497,7 @@ describe('UserRepository', () => {
         query,
         userRepository,
         expect.objectContaining({
-          paginationType: PaginationType.CURSOR,
+          paginationType: PaginationType.LIMIT_AND_OFFSET,
         }),
       );
       expect(result.data).toHaveLength(1);
@@ -533,19 +533,19 @@ describe('UserRepository', () => {
 
       expect(calls).toHaveLength(2);
 
-      // First call (ASC) should not have defaultSortBy in config
+      // First call (ASC) should still have defaultSortBy with offset pagination
       const [ascQuery, , ascConfig] = calls[0];
       expect(ascQuery.sortBy).toEqual([['createdAt', 'ASC']]);
-      expect(ascConfig.defaultSortBy).toBeUndefined();
+      expect(ascConfig.defaultSortBy).toEqual([['createdAt', 'DESC']]);
 
-      // Second call (DESC) should not have defaultSortBy in config
+      // Second call (DESC) should still have defaultSortBy with offset pagination
       const [descQuery, , descConfig] = calls[1];
       expect(descQuery.sortBy).toEqual([['createdAt', 'DESC']]);
-      expect(descConfig.defaultSortBy).toBeUndefined();
+      expect(descConfig.defaultSortBy).toEqual([['createdAt', 'DESC']]);
 
       // Both configs should still have other properties
-      expect(ascConfig.paginationType).toBe(PaginationType.CURSOR);
-      expect(descConfig.paginationType).toBe(PaginationType.CURSOR);
+      expect(ascConfig.paginationType).toBe(PaginationType.LIMIT_AND_OFFSET);
+      expect(descConfig.paginationType).toBe(PaginationType.LIMIT_AND_OFFSET);
       expect(ascConfig.sortableColumns).toContain('createdAt');
       expect(descConfig.sortableColumns).toContain('createdAt');
     });

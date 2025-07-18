@@ -31,8 +31,8 @@ export class UserRepository
   }
 
   /**
-   * Get default cursor pagination configuration for User entity
-   * Uses Unix timestamp (integer) based cursor pagination with createdAt
+   * Get default offset pagination configuration for User entity
+   * Uses offset-based pagination with flexible sorting options
    */
   protected getDefaultPaginateConfig(): PaginateConfig<User> {
     return {
@@ -46,7 +46,7 @@ export class UserRepository
         id: true,
       },
       loadEagerRelations: false,
-      paginationType: PaginationType.CURSOR,
+      paginationType: PaginationType.LIMIT_AND_OFFSET,
     };
   }
 

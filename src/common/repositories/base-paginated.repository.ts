@@ -9,8 +9,8 @@ import {
 import { IPaginatedRepository } from '../interfaces/paginated-repository.interface';
 
 /**
- * Base repository class that provides cursor-based pagination functionality using nestjs-paginate
- * All entity repositories can extend this class for consistent cursor pagination behavior
+ * Base repository class that provides offset-based pagination functionality using nestjs-paginate
+ * All entity repositories can extend this class for consistent offset pagination behavior
  */
 export abstract class BasePaginatedRepository<T extends ObjectLiteral>
   implements IPaginatedRepository<T>
@@ -20,15 +20,15 @@ export abstract class BasePaginatedRepository<T extends ObjectLiteral>
   /**
    * Get the default pagination configuration for this entity
    * Subclasses should override this to define entity-specific configuration
-   * Default configuration uses cursor-based pagination for better performance
+   * Default configuration uses offset-based pagination with flexible sorting
    */
   protected abstract getDefaultPaginateConfig(): PaginateConfig<T>;
 
   /**
-   * Find entities with cursor-based pagination support
+   * Find entities with offset-based pagination support
    * @param query - Pagination query parameters from nestjs-paginate
    * @param config - Optional custom pagination configuration
-   * @returns Paginated result with cursor metadata
+   * @returns Paginated result with offset metadata
    */
   async findPaginated(
     query: PaginateQuery,
@@ -36,24 +36,18 @@ export abstract class BasePaginatedRepository<T extends ObjectLiteral>
   ): Promise<Paginated<T>> {
     const paginateConfig = config || this.getDefaultPaginateConfig();
 
-    // Ensure cursor-based pagination is configured
-    const cursorConfig: PaginateConfig<T> = {
+    // Ensure offset-based pagination is configured
+    const offsetConfig: PaginateConfig<T> = {
       ...paginateConfig,
-      paginationType: PaginationType.CURSOR,
+      paginationType: PaginationType.LIMIT_AND_OFFSET,
     };
-
-    // If query has sortBy parameter, remove defaultSortBy from config
-    // to ensure query parameter takes precedence
-    if (query.sortBy && query.sortBy.length > 0) {
-      delete cursorConfig.defaultSortBy;
-    }
 
     // Ensure default limit is applied if not provided
     const paginateQuery = {
       ...query,
-      limit: query.limit || cursorConfig.defaultLimit || 50,
+      limit: query.limit || offsetConfig.defaultLimit || 50,
     };
 
-    return paginate(paginateQuery, this.repository, cursorConfig);
+    return paginate(paginateQuery, this.repository, offsetConfig);
   }
 }
