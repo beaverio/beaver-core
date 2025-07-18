@@ -1,6 +1,10 @@
 import { SanitizationPipe } from '../pipes/sanitization.pipe';
 import { ArgumentMetadata } from '@nestjs/common';
-import { NoSanitize, Sanitize, SanitizeRichText } from '../decorators/sanitize.decorator';
+import {
+  NoSanitize,
+  Sanitize,
+  SanitizeRichText,
+} from '../decorators/sanitize.decorator';
 import { IsString, IsEmail } from 'class-validator';
 
 /**
@@ -14,14 +18,14 @@ class ExampleFormDto {
   @IsString()
   title: string; // Automatically sanitized by pipe (no decorator needed)
 
-  @IsString() 
+  @IsString()
   description: string; // Automatically sanitized by pipe
 
   @SanitizeRichText() // Override: allow rich text formatting
   @IsString()
   content: string;
 
-  @NoSanitize() // Override: exclude from sanitization  
+  @NoSanitize() // Override: exclude from sanitization
   @IsString()
   apiKey: string;
 
@@ -55,16 +59,24 @@ describe('Pipe-Based Sanitization Integration', () => {
       const result = pipe.transform(maliciousData, metadata);
 
       // Default fields should be sanitized automatically
-      expect(result.title).toBe('Blog Post &lt;script&gt;alert("xss")&lt;/script&gt;');
-      expect(result.description).toBe('Description with &lt;iframe&gt;bad content&lt;/iframe&gt;');
-      expect(result.email).toBe('user@example.com&lt;script&gt;alert("email-xss")&lt;/script&gt;');
+      expect(result.title).toBe(
+        'Blog Post &lt;script&gt;alert("xss")&lt;/script&gt;',
+      );
+      expect(result.description).toBe(
+        'Description with &lt;iframe&gt;bad content&lt;/iframe&gt;',
+      );
+      expect(result.email).toBe(
+        'user@example.com&lt;script&gt;alert("email-xss")&lt;/script&gt;',
+      );
 
       // Rich text field should allow <b> but block <script>
       expect(result.content).toContain('<b>bold</b>');
       expect(result.content).not.toContain('<script>');
 
       // NoSanitize field should be unchanged
-      expect(result.apiKey).toBe('secret-key-<script>dont-sanitize-this</script>');
+      expect(result.apiKey).toBe(
+        'secret-key-<script>dont-sanitize-this</script>',
+      );
     });
 
     it('should preserve legitimate content while blocking attacks', () => {
@@ -87,7 +99,9 @@ describe('Pipe-Based Sanitization Integration', () => {
       // Should preserve all legitimate content
       expect(result.title).toBe('Hello 👋 World! Normal text with emojis');
       expect(result.description).toBe('Unicode characters: αβγ 中文 العربية');
-      expect(result.content).toBe('Rich text with <strong>emphasis</strong> and <em>style</em>');
+      expect(result.content).toBe(
+        'Rich text with <strong>emphasis</strong> and <em>style</em>',
+      );
       expect(result.apiKey).toBe('legitimate-api-key-123');
       expect(result.email).toBe('user@example.com');
     });
@@ -100,14 +114,15 @@ describe('Pipe-Based Sanitization Integration', () => {
       class NewFormDto {
         @IsString()
         existingField: string; // Developer remembered this one
-        
+
         @IsString()
         newFieldDeveloperForgot: string; // Developer forgot to add @SanitizeText()
       }
 
       const maliciousData = {
         existingField: 'Safe content',
-        newFieldDeveloperForgot: 'Malicious <script>alert("forgot-to-sanitize")</script> content',
+        newFieldDeveloperForgot:
+          'Malicious <script>alert("forgot-to-sanitize")</script> content',
       };
 
       const metadata: ArgumentMetadata = {
@@ -121,7 +136,7 @@ describe('Pipe-Based Sanitization Integration', () => {
       // Both fields should be sanitized automatically!
       expect(result.existingField).toBe('Safe content');
       expect(result.newFieldDeveloperForgot).toBe(
-        'Malicious &lt;script&gt;alert("forgot-to-sanitize")&lt;/script&gt; content'
+        'Malicious &lt;script&gt;alert("forgot-to-sanitize")&lt;/script&gt; content',
       );
       expect(result.newFieldDeveloperForgot).not.toContain('<script>');
     });
@@ -130,20 +145,26 @@ describe('Pipe-Based Sanitization Integration', () => {
       class AdvancedDto {
         @IsString()
         autoSanitized: string; // Default behavior
-        
-        @Sanitize({ allowedTags: ['span'], allowedAttributes: { span: ['class'] } })
-        @IsString()  
+
+        @Sanitize({
+          allowedTags: ['span'],
+          allowedAttributes: { span: ['class'] },
+        })
+        @IsString()
         customSanitized: string; // Custom rules
-        
+
         @NoSanitize()
         @IsString()
         notSanitized: string; // Explicitly excluded
       }
 
       const testData = {
-        autoSanitized: 'Text with <span class="highlight">content</span> and <script>bad</script>',
-        customSanitized: 'Text with <span class="highlight">content</span> and <script>bad</script>',
-        notSanitized: 'Raw content with <span class="highlight">content</span> and <script>preserved</script>',
+        autoSanitized:
+          'Text with <span class="highlight">content</span> and <script>bad</script>',
+        customSanitized:
+          'Text with <span class="highlight">content</span> and <script>bad</script>',
+        notSanitized:
+          'Raw content with <span class="highlight">content</span> and <script>preserved</script>',
       };
 
       const metadata: ArgumentMetadata = {
@@ -155,14 +176,20 @@ describe('Pipe-Based Sanitization Integration', () => {
       const result = pipe.transform(testData, metadata);
 
       // Auto-sanitized: removes all HTML
-      expect(result.autoSanitized).toBe('Text with &lt;span&gt;content&lt;/span&gt; and &lt;script&gt;bad&lt;/script&gt;');
-      
-      // Custom-sanitized: allows span with class, blocks script  
-      expect(result.customSanitized).toContain('<span class="highlight">content</span>');
+      expect(result.autoSanitized).toBe(
+        'Text with &lt;span&gt;content&lt;/span&gt; and &lt;script&gt;bad&lt;/script&gt;',
+      );
+
+      // Custom-sanitized: allows span with class, blocks script
+      expect(result.customSanitized).toContain(
+        '<span class="highlight">content</span>',
+      );
       expect(result.customSanitized).not.toContain('<script>');
-      
+
       // Not sanitized: everything preserved
-      expect(result.notSanitized).toContain('<span class="highlight">content</span>');
+      expect(result.notSanitized).toContain(
+        '<span class="highlight">content</span>',
+      );
       expect(result.notSanitized).toContain('<script>preserved</script>');
     });
   });
@@ -199,7 +226,7 @@ describe('Pipe-Based Sanitization Integration', () => {
       expect(result.contactInfo.phone).not.toContain('<script>');
       expect(result.preferences[0]).not.toContain('<script>');
       expect(result.preferences[1]).not.toContain('<script>');
-      
+
       // But legitimate content should be preserved
       expect(result.personalInfo.name).toContain('John');
       expect(result.personalInfo.name).toContain('Doe');

@@ -1,6 +1,13 @@
 import { plainToClass } from 'class-transformer';
 import { IsString } from 'class-validator';
-import { Sanitize, SanitizeText, SanitizeRichText, NoSanitize, SANITIZE_METADATA_KEY, NO_SANITIZE_METADATA_KEY } from './sanitize.decorator';
+import {
+  Sanitize,
+  SanitizeText,
+  SanitizeRichText,
+  NoSanitize,
+  SANITIZE_METADATA_KEY,
+  NO_SANITIZE_METADATA_KEY,
+} from './sanitize.decorator';
 
 // Test DTOs
 class TestDto {
@@ -247,7 +254,11 @@ describe('Sanitize Decorators', () => {
 
   describe('@NoSanitize decorator', () => {
     it('should set metadata correctly', () => {
-      const metadata = Reflect.getMetadata(NO_SANITIZE_METADATA_KEY, TestDto.prototype, 'sensitiveField');
+      const metadata = Reflect.getMetadata(
+        NO_SANITIZE_METADATA_KEY,
+        TestDto.prototype,
+        'sensitiveField',
+      );
       expect(metadata).toBe(true);
     });
 
@@ -260,30 +271,55 @@ describe('Sanitize Decorators', () => {
 
       // The decorator itself doesn't sanitize - the pipe handles that based on metadata
       // This test verifies the decorator doesn't interfere with normal transformation
-      expect(dto.sensitiveField).toBe("Sensitive <script>alert('password')</script> data");
+      expect(dto.sensitiveField).toBe(
+        "Sensitive <script>alert('password')</script> data",
+      );
     });
   });
 
   describe('Metadata functionality', () => {
     it('should set sanitization metadata for @Sanitize decorator', () => {
-      const metadata = Reflect.getMetadata(SANITIZE_METADATA_KEY, TestDto.prototype, 'basicField');
+      const metadata = Reflect.getMetadata(
+        SANITIZE_METADATA_KEY,
+        TestDto.prototype,
+        'basicField',
+      );
       expect(metadata).toEqual({});
     });
 
     it('should set custom options metadata', () => {
-      const metadata = Reflect.getMetadata(SANITIZE_METADATA_KEY, TestDto.prototype, 'customField');
+      const metadata = Reflect.getMetadata(
+        SANITIZE_METADATA_KEY,
+        TestDto.prototype,
+        'customField',
+      );
       expect(metadata).toEqual({ allowedTags: ['b'] });
     });
 
     it('should set rich text metadata', () => {
-      const metadata = Reflect.getMetadata(SANITIZE_METADATA_KEY, TestDto.prototype, 'richTextField');
-      expect(metadata).toEqual({ allowBasicFormatting: true, allowEmojis: true });
+      const metadata = Reflect.getMetadata(
+        SANITIZE_METADATA_KEY,
+        TestDto.prototype,
+        'richTextField',
+      );
+      expect(metadata).toEqual({
+        allowBasicFormatting: true,
+        allowEmojis: true,
+      });
     });
 
     it('should not set metadata for normal fields', () => {
-      const sanitizeMetadata = Reflect.getMetadata(SANITIZE_METADATA_KEY, TestDto.prototype, 'normalField');
-      const noSanitizeMetadata = Reflect.getMetadata(NO_SANITIZE_METADATA_KEY, TestDto.prototype, 'normalField');
-      
+      const sanitizeMetadata = Reflect.getMetadata(
+        SANITIZE_METADATA_KEY,
+        TestDto.prototype,
+        'normalField',
+      );
+      const noSanitizeMetadata = Reflect.getMetadata(
+        NO_SANITIZE_METADATA_KEY,
+        TestDto.prototype,
+        'normalField',
+      );
+
       expect(sanitizeMetadata).toBeUndefined();
       expect(noSanitizeMetadata).toBeUndefined();
     });

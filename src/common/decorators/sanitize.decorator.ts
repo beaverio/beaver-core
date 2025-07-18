@@ -32,7 +32,7 @@ export function Sanitize(options: SanitizationOptions = {}): PropertyDecorator {
   return function (target: any, propertyKey: string | symbol) {
     // Set metadata for the SanitizationPipe
     Reflect.defineMetadata(SANITIZE_METADATA_KEY, options, target, propertyKey);
-    
+
     // Apply the transform decorator for backward compatibility
     const transformDecorator = Transform(({ value }: { value: unknown }) => {
       if (value === null || value === undefined) {
@@ -56,7 +56,7 @@ export function Sanitize(options: SanitizationOptions = {}): PropertyDecorator {
       // Return non-string values unchanged
       return value;
     });
-    
+
     transformDecorator(target, propertyKey);
   };
 }

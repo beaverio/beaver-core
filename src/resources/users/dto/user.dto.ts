@@ -1,11 +1,15 @@
 import { PartialType, PickType } from '@nestjs/mapped-types';
 import { IsEmail, IsStrongPassword } from 'class-validator';
-import { NoSanitize } from '../../../common/decorators/sanitize.decorator';
+import {
+  NoSanitize,
+  SanitizeText,
+} from '../../../common/decorators/sanitize.decorator';
 import { BaseDto, CreateUpdateDto } from '../../../common/dto/base.dto';
 import { User } from '../entities/user.entity';
 
 // Base DTO containing all possible user fields with their validations
 export class BaseUserDto extends BaseDto {
+  @SanitizeText()
   @IsEmail()
   email: string;
 
@@ -20,17 +24,17 @@ export class BaseUserDto extends BaseDto {
 export class CreateUserDto extends PickType(BaseUserDto, [
   'email',
   'password',
-] as const) { }
+] as const) {}
 
 // Update DTO - automatically excludes id, createdAt, updatedAt
 export class UpdateUserDto extends CreateUpdateDto(BaseUserDto, [
   'lastLogin',
-]) { }
+]) {}
 
 // Query Params DTO - get one user by id or email
 export class QueryParamsUserDto extends PartialType(
   PickType(BaseUserDto, ['id', 'email'] as const),
-) { }
+) {}
 
 // Response DTO - only safe fields (no password)
 export class UserResponseDto extends PickType(BaseUserDto, [

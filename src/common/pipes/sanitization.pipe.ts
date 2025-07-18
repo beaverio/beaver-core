@@ -1,12 +1,15 @@
 import 'reflect-metadata';
 import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
-import { NO_SANITIZE_METADATA_KEY, SANITIZE_METADATA_KEY } from '../decorators/sanitize.decorator';
+import {
+  NO_SANITIZE_METADATA_KEY,
+  SANITIZE_METADATA_KEY,
+} from '../decorators/sanitize.decorator';
 import { SanitizationUtil } from '../utils/sanitization.util';
 
 /**
  * Global sanitization pipe that automatically sanitizes all string fields
  * in DTOs to prevent XSS attacks and malicious content injection
- * 
+ *
  * This pipe runs before validation and sanitizes data by default,
  * unless explicitly overridden with decorators:
  * - @NoSanitize() - Skip sanitization entirely
@@ -20,7 +23,7 @@ export class SanitizationPipe implements PipeTransform {
    * @param metadata - Pipe metadata including target class
    * @returns Sanitized data
    */
-  transform(value: any, metadata: ArgumentMetadata): any {
+  transform(value: unknown, metadata: ArgumentMetadata): any {
     // Only process body/query parameters with a defined DTO class
     if (!value || !metadata.metatype || typeof value !== 'object') {
       return value;
@@ -40,21 +43,21 @@ export class SanitizationPipe implements PipeTransform {
    * @param targetClass - Target DTO class with metadata
    * @returns Sanitized object
    */
-  private sanitizeObject(obj: any, targetClass: any): any {
+  private sanitizeObject(obj: unknown, targetClass: any): any {
     if (!obj || typeof obj !== 'object') {
       return obj;
     }
 
     // Handle arrays
     if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitizeObject(item, targetClass));
+      return obj.map((item) => this.sanitizeObject(item, targetClass));
     }
 
-    const sanitizedObj = { ...obj };
+    const sanitizedObj = { ...obj } as Record<string, any>;
 
     // Get all property names from the object
     for (const key in sanitizedObj) {
-      if (sanitizedObj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(sanitizedObj, key)) {
         const value = sanitizedObj[key];
 
         // Skip null/undefined values
@@ -63,13 +66,21 @@ export class SanitizationPipe implements PipeTransform {
         }
 
         // Check if field should be excluded from sanitization
-        const noSanitize = this.getMetadata(NO_SANITIZE_METADATA_KEY, targetClass, key);
+        const noSanitize = this.getMetadata(
+          NO_SANITIZE_METADATA_KEY,
+          targetClass,
+          key,
+        );
         if (noSanitize) {
           continue; // Skip sanitization for this field
         }
 
         // Get custom sanitization options if defined
-        const customOptions = this.getMetadata(SANITIZE_METADATA_KEY, targetClass, key);
+        const customOptions = this.getMetadata(
+          SANITIZE_METADATA_KEY,
+          targetClass,
+          key,
+        );
 
         // Apply sanitization to string values
         if (typeof value === 'string') {
@@ -78,7 +89,7 @@ export class SanitizationPipe implements PipeTransform {
         }
         // Handle arrays of strings
         else if (Array.isArray(value)) {
-          sanitizedObj[key] = value.map(item => {
+          sanitizedObj[key] = value.map((item) => {
             if (typeof item === 'string') {
               const options = customOptions || { allowEmojis: true };
               return SanitizationUtil.sanitize(item, options);
@@ -103,7 +114,11 @@ export class SanitizationPipe implements PipeTransform {
    * @param propertyKey - Property name
    * @returns Metadata value or undefined
    */
-  private getMetadata(metadataKey: string, target: any, propertyKey: string): any {
+  private getMetadata(
+    metadataKey: string,
+    target: any,
+    propertyKey: string,
+  ): any {
     return Reflect.getMetadata(metadataKey, target.prototype, propertyKey);
   }
 

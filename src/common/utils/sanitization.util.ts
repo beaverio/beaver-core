@@ -107,7 +107,7 @@ export class SanitizationUtil {
     let sanitized = sanitizeHtml(value, config);
 
     // Then, remove additional dangerous text patterns
-    DANGEROUS_TEXT_PATTERNS.forEach(pattern => {
+    DANGEROUS_TEXT_PATTERNS.forEach((pattern) => {
       sanitized = sanitized.replace(pattern, '');
     });
 

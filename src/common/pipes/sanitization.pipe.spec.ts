@@ -1,6 +1,6 @@
 import { ArgumentMetadata } from '@nestjs/common';
 import { SanitizationPipe } from './sanitization.pipe';
-import { Sanitize, NoSanitize, SanitizeRichText } from '../decorators/sanitize.decorator';
+import { Sanitize, NoSanitize } from '../decorators/sanitize.decorator';
 import { IsString, IsEmail } from 'class-validator';
 
 // Test DTOs for the pipe
@@ -46,7 +46,9 @@ describe('SanitizationPipe', () => {
 
       const result = pipe.transform(testData, metadata);
 
-      expect(result.title).toBe('Hello &lt;script&gt;alert("xss")&lt;/script&gt; world!');
+      expect(result.title).toBe(
+        'Hello &lt;script&gt;alert("xss")&lt;/script&gt; world!',
+      );
     });
 
     it('should preserve emojis in default sanitization', () => {
@@ -81,9 +83,13 @@ describe('SanitizationPipe', () => {
       const result = pipe.transform(testData, metadata);
 
       // name and email should be sanitized (default behavior)
-      expect(result.name).toBe('John &lt;script&gt;alert("xss")&lt;/script&gt;');
-      expect(result.email).toBe('test@example.com&lt;script&gt;alert("xss")&lt;/script&gt;');
-      
+      expect(result.name).toBe(
+        'John &lt;script&gt;alert("xss")&lt;/script&gt;',
+      );
+      expect(result.email).toBe(
+        'test@example.com&lt;script&gt;alert("xss")&lt;/script&gt;',
+      );
+
       // password should NOT be sanitized due to @NoSanitize
       expect(result.password).toBe('MyP@ssw0rd<script>alert("xss")</script>');
     });
@@ -102,12 +108,17 @@ describe('SanitizationPipe', () => {
       const result = pipe.transform(testData, metadata);
 
       // Should allow <b> tag but escape <script>
-      expect(result.richContent).toBe('Hello <b>world</b> &lt;script&gt;alert("xss")&lt;/script&gt;');
+      expect(result.richContent).toBe(
+        'Hello <b>world</b> &lt;script&gt;alert("xss")&lt;/script&gt;',
+      );
     });
 
     it('should handle arrays of strings', () => {
       const testData = {
-        name: ['John <script>alert("xss")</script>', 'Jane <iframe>bad</iframe>'],
+        name: [
+          'John <script>alert("xss")</script>',
+          'Jane <iframe>bad</iframe>',
+        ],
       };
 
       const metadata: ArgumentMetadata = {
@@ -191,7 +202,7 @@ describe('SanitizationPipe', () => {
 
     it('should handle missing metatype', () => {
       const testData = { name: 'test<script>alert("xss")</script>' };
-      
+
       const metadata: ArgumentMetadata = {
         type: 'body',
         metatype: undefined,
@@ -199,7 +210,7 @@ describe('SanitizationPipe', () => {
       };
 
       const result = pipe.transform(testData, metadata);
-      
+
       // Should return unchanged when no metatype
       expect(result).toBe(testData);
     });
@@ -220,8 +231,12 @@ describe('SanitizationPipe', () => {
 
       const result = pipe.transform(testData, metadata);
 
-      expect(result.user.name).toBe('John &lt;script&gt;alert("xss")&lt;/script&gt;');
-      expect(result.user.email).toBe('test@example.com&lt;script&gt;bad&lt;/script&gt;');
+      expect(result.user.name).toBe(
+        'John &lt;script&gt;alert("xss")&lt;/script&gt;',
+      );
+      expect(result.user.email).toBe(
+        'test@example.com&lt;script&gt;bad&lt;/script&gt;',
+      );
     });
   });
 
@@ -244,14 +259,14 @@ describe('SanitizationPipe', () => {
       it(`should sanitize: ${maliciousInput}`, () => {
         const testData = { title: maliciousInput };
         const result = pipe.transform(testData, metadata);
-        
+
         // Should not contain any executable scripts
         expect(result.title).not.toContain('<script>');
         expect(result.title).not.toContain('<iframe>');
         expect(result.title).not.toContain('onerror=');
         expect(result.title).not.toContain('onclick=');
         expect(result.title).not.toContain('onload=');
-        
+
         // For HTML context, javascript: should be removed
         if (maliciousInput.includes('javascript:')) {
           expect(result.title).not.toContain('javascript:');
@@ -262,7 +277,7 @@ describe('SanitizationPipe', () => {
     it('should handle standalone javascript: URLs', () => {
       const testData = { title: 'javascript:alert("XSS")' };
       const result = pipe.transform(testData, metadata);
-      
+
       // Standalone javascript: URLs should be removed/sanitized
       expect(result.title).not.toContain('javascript:');
       expect(result.title).toContain('alert("XSS")'); // Content preserved, just protocol removed
