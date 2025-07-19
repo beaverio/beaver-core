@@ -17,7 +17,6 @@ import {
 } from '../dto/membership.dto';
 import { IMembershipsRepository } from '../interfaces/memberships-repository.interface';
 import { IMembershipsService } from '../interfaces/memberships-service.interface';
-import { Membership } from '../entities/membership.entity';
 
 @Injectable()
 export class MembershipsService implements IMembershipsService {
@@ -60,7 +59,7 @@ export class MembershipsService implements IMembershipsService {
     }
 
     const membership = await this.membershipsRepository.create(dto);
-    return this.mapToResponseDto(membership);
+    return MembershipResponseDto.fromEntity(membership);
   }
 
   async findOne(id: string): Promise<MembershipResponseDto> {
@@ -68,7 +67,7 @@ export class MembershipsService implements IMembershipsService {
     if (!membership) {
       throw new NotFoundException('Membership not found');
     }
-    return this.mapToResponseDto(membership);
+    return MembershipResponseDto.fromEntity(membership);
   }
 
   async update(
@@ -81,7 +80,7 @@ export class MembershipsService implements IMembershipsService {
     }
 
     const updatedMembership = await this.membershipsRepository.update(id, dto);
-    return this.mapToResponseDto(updatedMembership);
+    return MembershipResponseDto.fromEntity(updatedMembership);
   }
 
   async delete(id: string): Promise<void> {
@@ -129,29 +128,6 @@ export class MembershipsService implements IMembershipsService {
     const memberships =
       await this.membershipsRepository.findByAccountId(accountId);
 
-    return memberships.map((membership) => this.mapToResponseDto(membership));
-  }
-
-  private mapToResponseDto(membership: Membership): MembershipResponseDto {
-    return {
-      id: membership.id,
-      userId: membership.userId,
-      accountId: membership.accountId,
-      permissions: membership.permissions,
-      createdAt: membership.createdAt,
-      updatedAt: membership.updatedAt,
-      user: membership.user
-        ? {
-            id: membership.user.id,
-            email: membership.user.email,
-          }
-        : undefined,
-      account: membership.account
-        ? {
-            id: membership.account.id,
-            name: membership.account.name,
-          }
-        : undefined,
-    };
+    return MembershipResponseDto.fromEntities(memberships);
   }
 }

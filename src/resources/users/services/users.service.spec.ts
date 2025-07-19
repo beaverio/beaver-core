@@ -213,7 +213,9 @@ describe('UsersService', () => {
 
       const result = await service.getUser(query);
 
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith(query);
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith(query, [
+        'memberships',
+      ]);
       expect(result).toEqual(mockUser);
     });
 
@@ -222,7 +224,9 @@ describe('UsersService', () => {
       mockUserRepository.findOne.mockResolvedValue(null);
 
       await expect(service.getUser(query)).rejects.toThrow(NotFoundException);
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith(query);
+      expect(mockUserRepository.findOne).toHaveBeenCalledWith(query, [
+        'memberships',
+      ]);
     });
   });
 

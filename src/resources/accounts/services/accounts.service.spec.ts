@@ -116,7 +116,9 @@ describe('AccountsService', () => {
 
       const result = await service.getAccount(query);
 
-      expect(mockAccountsRepository.findOne).toHaveBeenCalledWith(query);
+      expect(mockAccountsRepository.findOne).toHaveBeenCalledWith(query, [
+        'memberships',
+      ]);
       expect(result).toEqual(mockAccount);
     });
 
@@ -127,7 +129,9 @@ describe('AccountsService', () => {
       await expect(service.getAccount(query)).rejects.toThrow(
         NotFoundException,
       );
-      expect(mockAccountsRepository.findOne).toHaveBeenCalledWith(query);
+      expect(mockAccountsRepository.findOne).toHaveBeenCalledWith(query, [
+        'memberships',
+      ]);
     });
   });
 

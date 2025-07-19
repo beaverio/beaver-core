@@ -26,7 +26,7 @@ export class MembershipsController {
   constructor(
     @Inject('IMembershipsService')
     private readonly membershipsService: IMembershipsService,
-  ) { }
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -37,7 +37,9 @@ export class MembershipsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<MembershipResponseDto> {
+  async findOne(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<MembershipResponseDto> {
     return this.membershipsService.findOne(id);
   }
 

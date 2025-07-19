@@ -11,7 +11,10 @@ export interface IUsersRepository
   extends ICacheableRepository<User>,
     IPaginatedRepository<User> {
   create(dto: CreateUserDto): Promise<User>;
-  findOne(query: QueryParamsUserDto): Promise<User | null>;
+  findOne(
+    query: QueryParamsUserDto,
+    relations?: string[],
+  ): Promise<User | null>;
   update(id: string, dto: UpdateUserDto): Promise<User>;
   hardDelete(id: string): Promise<void>;
   updateLastLogin(id: string): Promise<User>;

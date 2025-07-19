@@ -186,6 +186,7 @@ describe('AccountsRepository', () => {
 
       expect(accountsRepository.findOne).toHaveBeenCalledWith({
         where: criteria,
+        relations: [],
       });
       expect(result).toEqual(mockAccount);
     });
@@ -220,6 +221,7 @@ describe('AccountsRepository', () => {
       expect(cacheService.get).toHaveBeenCalledWith('account:test-id');
       expect(accountsRepository.findOne).toHaveBeenCalledWith({
         where: criteria,
+        relations: [],
       });
       expect(cacheService.set).toHaveBeenCalledWith(
         'account:test-id',

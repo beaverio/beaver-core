@@ -154,8 +154,8 @@ describe('MembershipsService', () => {
         userId: mockMembership.userId,
         accountId: mockMembership.accountId,
         permissions: mockMembership.permissions,
-        createdAt: mockMembership.createdAt,
-        updatedAt: mockMembership.updatedAt,
+        createdAt: new Date(mockMembership.createdAt).toISOString(),
+        updatedAt: new Date(mockMembership.updatedAt).toISOString(),
         user: {
           id: mockUser.id,
           email: mockUser.email,
@@ -223,8 +223,8 @@ describe('MembershipsService', () => {
         userId: mockMembership.userId,
         accountId: mockMembership.accountId,
         permissions: mockMembership.permissions,
-        createdAt: mockMembership.createdAt,
-        updatedAt: mockMembership.updatedAt,
+        createdAt: new Date(mockMembership.createdAt).toISOString(),
+        updatedAt: new Date(mockMembership.updatedAt).toISOString(),
         user: {
           id: mockUser.id,
           email: mockUser.email,
@@ -355,8 +355,8 @@ describe('MembershipsService', () => {
         userId: mockMembership.userId,
         accountId: mockMembership.accountId,
         permissions: mockMembership.permissions,
-        createdAt: mockMembership.createdAt,
-        updatedAt: mockMembership.updatedAt,
+        createdAt: new Date(mockMembership.createdAt).toISOString(),
+        updatedAt: new Date(mockMembership.updatedAt).toISOString(),
         user: {
           id: mockUser.id,
           email: mockUser.email,

@@ -29,7 +29,7 @@ export class UsersService implements IUserService {
   }
 
   async getUser(query: QueryParamsUserDto): Promise<User> {
-    const user = await this.userRepository.findOne(query);
+    const user = await this.userRepository.findOne(query, ['memberships']);
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -49,7 +49,12 @@ export class UsersService implements IUserService {
   }
 
   async deleteUser(id: string): Promise<void> {
-    await this.getUser({ id });
+    // Check if user exists before deleting (without loading relations)
+    const user = await this.userRepository.findOne({ id });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     await this.userRepository.hardDelete(id);
   }

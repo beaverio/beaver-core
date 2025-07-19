@@ -602,6 +602,7 @@ describe('UsersRepository', () => {
 
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'test-id' },
+        relations: [],
       });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${mockUser.id}`,

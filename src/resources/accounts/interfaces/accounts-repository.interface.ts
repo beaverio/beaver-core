@@ -7,7 +7,10 @@ export interface IAccountsRepository
   extends ICacheableRepository<Account>,
     IPaginatedRepository<Account> {
   create(dto: UpsertAccountDto): Promise<Account>;
-  findOne(query: QueryParamsAccountDto): Promise<Account | null>;
+  findOne(
+    query: QueryParamsAccountDto,
+    relations?: string[],
+  ): Promise<Account | null>;
   update(id: string, dto: UpsertAccountDto): Promise<Account>;
   hardDelete(id: string): Promise<void>;
 }

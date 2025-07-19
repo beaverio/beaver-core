@@ -27,7 +27,7 @@ export class AccountsController {
     private readonly accountsService: IAccountsService,
     @Inject('IMembershipsService')
     private readonly membershipsService: IMembershipsService,
-  ) { }
+  ) {}
 
   @Post()
   async createAccount(

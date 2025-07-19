@@ -199,8 +199,8 @@ describe('AccountsController', () => {
           userId: 'user-id-1',
           accountId: 'test-account-id',
           permissions: ['account:read', 'account:write'],
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           user: {
             id: 'user-id-1',
             email: 'user1@example.com',

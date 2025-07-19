@@ -28,7 +28,7 @@ export class UsersController {
     private readonly usersService: IUserService,
     @Inject('IMembershipsService')
     private readonly membershipsService: IMembershipsService,
-  ) { }
+  ) {}
 
   @Get()
   async getUsers(

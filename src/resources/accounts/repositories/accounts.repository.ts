@@ -53,7 +53,10 @@ export class AccountsRepository
     return savedAccount;
   }
 
-  async findOne(where: QueryParamsAccountDto): Promise<Account | null> {
+  async findOne(
+    where: QueryParamsAccountDto,
+    relations?: string[],
+  ): Promise<Account | null> {
     if (where.id) {
       const cached = await this.getCachedEntity(where.id);
       if (cached) {
@@ -62,7 +65,10 @@ export class AccountsRepository
       }
     }
 
-    const account = await this.repo.findOne({ where });
+    const account = await this.repo.findOne({
+      where,
+      relations: relations || [],
+    });
 
     if (account) {
       await this.cacheEntity(account);

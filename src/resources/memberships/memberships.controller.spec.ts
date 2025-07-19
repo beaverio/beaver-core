@@ -17,8 +17,8 @@ describe('MembershipsController', () => {
     userId: '123e4567-e89b-12d3-a456-426614174001',
     accountId: '123e4567-e89b-12d3-a456-426614174002',
     permissions: ['account:read', 'account:write'],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     user: {
       id: '123e4567-e89b-12d3-a456-426614174001',
       email: 'test@example.com',
