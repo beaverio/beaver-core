@@ -8,7 +8,11 @@ import { CommonModule } from '../../common/common.module';
 import { MembershipsModule } from '../memberships/memberships.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), CommonModule, forwardRef(() => MembershipsModule)],
+  imports: [
+    TypeOrmModule.forFeature([User]),
+    CommonModule,
+    forwardRef(() => MembershipsModule),
+  ],
   controllers: [UsersController],
   providers: [
     {

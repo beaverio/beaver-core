@@ -35,7 +35,6 @@ describe('MembershipsController', () => {
       findOne: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-      findAll: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -72,31 +71,6 @@ describe('MembershipsController', () => {
 
       expect(service.create).toHaveBeenCalledWith(createDto);
       expect(result).toEqual(mockMembershipResponse);
-    });
-  });
-
-  describe('findAll', () => {
-    it('should return paginated memberships', async () => {
-      const query = { page: 1, limit: 10 } as any;
-      const paginatedResult = {
-        data: [mockMembershipResponse],
-        meta: {
-          itemsPerPage: 10,
-          totalItems: 1,
-          currentPage: 1,
-          totalPages: 1,
-        },
-        links: {
-          current: '/memberships?page=1&limit=10',
-        },
-      } as any;
-
-      service.findAll = jest.fn().mockResolvedValue(paginatedResult);
-
-      const result = await controller.findAll(query);
-
-      expect(service.findAll).toHaveBeenCalledWith(query);
-      expect(result).toEqual(paginatedResult);
     });
   });
 

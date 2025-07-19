@@ -84,7 +84,6 @@ describe('MembershipsService', () => {
       findByUserId: jest.fn(),
       findByAccountId: jest.fn(),
       findByUserAndAccount: jest.fn(),
-      findPaginated: jest.fn(),
     };
 
     usersRepository = {

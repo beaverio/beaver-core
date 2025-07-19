@@ -6,7 +6,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Paginated, PaginateQuery } from 'nestjs-paginate';
 import { IUsersRepository } from '../../users/interfaces/users-repository.interface';
 import { IAccountsRepository } from '../../accounts/interfaces/accounts-repository.interface';
 import {
@@ -93,20 +92,6 @@ export class MembershipsService implements IMembershipsService {
 
     await this.membershipsRepository.hardDelete(id);
     this.logger.debug(`Membership deleted: ${id}`);
-  }
-
-  async findAll(
-    pagination: PaginateQuery,
-  ): Promise<Paginated<MembershipResponseDto>> {
-    const paginatedResult =
-      await this.membershipsRepository.findPaginated(pagination);
-
-    return {
-      ...paginatedResult,
-      data: paginatedResult.data.map((membership: Membership) =>
-        this.mapToResponseDto(membership),
-      ),
-    } as Paginated<MembershipResponseDto>;
   }
 
   async findUserMemberships(

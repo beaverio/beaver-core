@@ -1,4 +1,3 @@
-import { Paginated, PaginateQuery } from 'nestjs-paginate';
 import {
   CreateMembershipDto,
   MembershipResponseDto,
@@ -11,7 +10,6 @@ export interface IMembershipsService {
   findOne(id: string): Promise<MembershipResponseDto>;
   update(id: string, dto: UpdateMembershipDto): Promise<MembershipResponseDto>;
   delete(id: string): Promise<void>;
-  findAll(pagination: PaginateQuery): Promise<Paginated<MembershipResponseDto>>;
   findUserMemberships(userId: string): Promise<UserMembershipsResponseDto>;
   findAccountMemberships(accountId: string): Promise<MembershipResponseDto[]>;
 }

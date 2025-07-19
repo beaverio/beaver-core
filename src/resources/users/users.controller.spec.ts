@@ -266,11 +266,15 @@ describe('UsersController', () => {
         ],
       };
 
-      mockMembershipsService.findUserMemberships.mockResolvedValue(mockUserMembershipsResponse);
+      mockMembershipsService.findUserMemberships.mockResolvedValue(
+        mockUserMembershipsResponse,
+      );
 
       const result = await controller.getUserMemberships(userId);
 
-      expect(mockMembershipsService.findUserMemberships).toHaveBeenCalledWith(userId);
+      expect(mockMembershipsService.findUserMemberships).toHaveBeenCalledWith(
+        userId,
+      );
       expect(result).toEqual(mockUserMembershipsResponse);
     });
   });

@@ -212,11 +212,15 @@ describe('AccountsController', () => {
         },
       ];
 
-      mockMembershipsService.findAccountMemberships.mockResolvedValue(mockMemberships);
+      mockMembershipsService.findAccountMemberships.mockResolvedValue(
+        mockMemberships,
+      );
 
       const result = await controller.getAccountMemberships(accountId);
 
-      expect(mockMembershipsService.findAccountMemberships).toHaveBeenCalledWith(accountId);
+      expect(
+        mockMembershipsService.findAccountMemberships,
+      ).toHaveBeenCalledWith(accountId);
       expect(result).toEqual(mockMemberships);
     });
   });

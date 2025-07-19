@@ -11,7 +11,6 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
 import { JWTAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   CreateMembershipDto,
@@ -34,13 +33,6 @@ export class MembershipsController {
     @Body() createMembershipDto: CreateMembershipDto,
   ): Promise<MembershipResponseDto> {
     return this.membershipsService.create(createMembershipDto);
-  }
-
-  @Get()
-  async findAll(
-    @Paginate() query: PaginateQuery,
-  ): Promise<Paginated<MembershipResponseDto>> {
-    return this.membershipsService.findAll(query);
   }
 
   @Get(':id')
