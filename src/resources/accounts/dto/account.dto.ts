@@ -1,9 +1,11 @@
 import { PartialType, PickType } from '@nestjs/mapped-types';
 import { IsString } from 'class-validator';
+import { SanitizeText } from '../../../common/decorators/sanitize.decorator';
 import { BaseDto, CreateUpdateDto } from '../../../common/dto/base.dto';
 import { Account } from '../entities/account.entity';
 
 export class AccountDto extends BaseDto {
+  @SanitizeText()
   @IsString()
   name: string;
 }
