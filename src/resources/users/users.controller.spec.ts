@@ -256,12 +256,12 @@ describe('UsersController', () => {
       const mockUserMembershipsResponse: UserMembershipsResponseDto = {
         memberships: [
           {
-            familyId: 'account-id-1',
-            permissions: ['account:read', 'account:write'],
+            familyId: 'family-id-1',
+            permissions: ['family:read', 'family:write'],
           },
           {
-            familyId: 'account-id-2',
-            permissions: ['account:read'],
+            familyId: 'family-id-2',
+            permissions: ['family:read'],
           },
         ],
       };

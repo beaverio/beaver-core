@@ -198,7 +198,7 @@ describe('MembershipsRepository', () => {
 
       expect(mockRepo.findOneBy).toHaveBeenCalledWith({ id });
       expect(mockRepo.delete).toHaveBeenCalledWith(id);
-      expect(mockCacheService.delete).toHaveBeenCalledTimes(5); // entity, user memberships, account memberships, user entity, account entity
+      expect(mockCacheService.delete).toHaveBeenCalledTimes(5); // entity, user memberships, family memberships, user entity, family entity
     });
   });
 
@@ -239,7 +239,7 @@ describe('MembershipsRepository', () => {
   });
 
   describe('findByFamilyId', () => {
-    it('should return account memberships from database', async () => {
+    it('should return family memberships from database', async () => {
       const familyId = '123e4567-e89b-12d3-a456-426614174002';
       const memberships = [mockMembership];
       mockCacheService.get = jest.fn().mockResolvedValue(null);

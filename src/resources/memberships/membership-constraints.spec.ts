@@ -22,7 +22,7 @@ describe('Membership Entity Constraints', () => {
 
   const mockFamily = {
     id: '123e4567-e89b-12d3-a456-426614174002',
-    name: 'Test Account',
+    name: 'Test family',
   };
 
   beforeEach(async () => {
@@ -154,13 +154,13 @@ describe('Membership Entity Constraints', () => {
       //    - All Membership records with that userId are automatically deleted
       //    - This is handled by the database with ON DELETE CASCADE
 
-      // 2. When Account is deleted:
+      // 2. When family is deleted:
       //    - All Membership records with that familyId are automatically deleted
       //    - This is handled by the database with ON DELETE CASCADE
 
       // 3. When Membership is deleted:
       //    - Only the membership record is removed
-      //    - User and Account records remain intact
+      //    - User and family records remain intact
 
       const entityDefinitions = {
         user: {
@@ -194,16 +194,16 @@ describe('Membership Entity Constraints', () => {
         {
           id: 'membership1',
           userId,
-          familyId: 'account1',
+          familyId: 'family1',
           permissions: ['family:read'],
-          family: { id: 'account1', name: 'Account 1' },
+          family: { id: 'family1', name: 'family 1' },
         },
         {
           id: 'membership2',
           userId,
-          familyId: 'account2',
+          familyId: 'family2',
           permissions: ['family:write'],
-          family: { id: 'account2', name: 'Account 2' },
+          family: { id: 'family2', name: 'family 2' },
         },
       ];
 
@@ -215,12 +215,12 @@ describe('Membership Entity Constraints', () => {
       const result = await service.findUserMemberships(userId);
 
       expect(result.memberships).toHaveLength(2);
-      expect(result.memberships[0].familyId).toBe('account1');
-      expect(result.memberships[1].familyId).toBe('account2');
+      expect(result.memberships[0].familyId).toBe('family1');
+      expect(result.memberships[1].familyId).toBe('family2');
       expect(membershipsRepository.findByUserId).toHaveBeenCalledWith(userId);
     });
 
-    it('should support loading account.memberships relationship', async () => {
+    it('should support loading family.memberships relationship', async () => {
       const familyId = mockFamily.id;
       const mockMemberships = [
         {

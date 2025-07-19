@@ -42,7 +42,7 @@ describe('MembershipsService', () => {
 
   const mockFamily: Family = {
     id: '123e4567-e89b-12d3-a456-426614174002',
-    name: 'Test Account',
+    name: 'Test Family',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     setCreationTimestamps: jest.fn(),
@@ -179,7 +179,7 @@ describe('MembershipsService', () => {
       expect(familiesRepository.findOne).not.toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException if account not found', async () => {
+    it('should throw BadRequestException if family not found', async () => {
       usersRepository.findOne = jest.fn().mockResolvedValue(mockUser);
       familiesRepository.findOne = jest.fn().mockResolvedValue(null);
 
@@ -334,7 +334,7 @@ describe('MembershipsService', () => {
   });
 
   describe('findFamilyMemberships', () => {
-    it('should return account memberships successfully', async () => {
+    it('should return family memberships successfully', async () => {
       const familyId = '123e4567-e89b-12d3-a456-426614174002';
       familiesRepository.findOne = jest.fn().mockResolvedValue(mockFamily);
       membershipsRepository.findByFamilyId = jest
@@ -368,7 +368,7 @@ describe('MembershipsService', () => {
       });
     });
 
-    it('should throw NotFoundException if account not found', async () => {
+    it('should throw NotFoundException if family not found', async () => {
       const familyId = '123e4567-e89b-12d3-a456-426614174002';
       familiesRepository.findOne = jest.fn().mockResolvedValue(null);
 
