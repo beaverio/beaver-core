@@ -27,7 +27,7 @@ export class AccountsController {
     private readonly accountsService: IAccountsService,
     @Inject('IMembershipsService')
     private readonly membershipsService: IMembershipsService,
-  ) {}
+  ) { }
 
   @Post()
   async createAccount(
@@ -60,14 +60,14 @@ export class AccountsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(
+  async deleteAccount(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<void> {
     await this.accountsService.deleteAccount(id);
   }
 
   @Patch(':id')
-  async updateUser(
+  async updateAccount(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpsertAccountDto,
   ): Promise<AccountResponseDto> {

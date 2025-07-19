@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   UseGuards,
@@ -25,7 +26,7 @@ export class MembershipsController {
   constructor(
     @Inject('IMembershipsService')
     private readonly membershipsService: IMembershipsService,
-  ) {}
+  ) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -36,13 +37,13 @@ export class MembershipsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<MembershipResponseDto> {
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<MembershipResponseDto> {
     return this.membershipsService.findOne(id);
   }
 
   @Patch(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() updateMembershipDto: UpdateMembershipDto,
   ): Promise<MembershipResponseDto> {
     return this.membershipsService.update(id, updateMembershipDto);
@@ -50,7 +51,7 @@ export class MembershipsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string): Promise<void> {
+  async delete(@Param('id', new ParseUUIDPipe()) id: string): Promise<void> {
     return this.membershipsService.delete(id);
   }
 }

@@ -6,8 +6,10 @@ import {
   IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { BaseDto, CreateUpdateDto } from 'src/common/dto/base.dto';
+import { PickType } from '@nestjs/mapped-types';
 
-export class CreateMembershipDto {
+export class BaseMembershipDto extends BaseDto {
   @IsUUID()
   userId: string;
 
@@ -20,12 +22,13 @@ export class CreateMembershipDto {
   permissions: string[];
 }
 
-export class UpdateMembershipDto {
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  permissions: string[];
-}
+export class CreateMembershipDto extends PickType(BaseMembershipDto, [
+  'userId',
+  'accountId',
+  'permissions',
+] as const) { }
+
+export class UpdateMembershipDto extends CreateUpdateDto(BaseMembershipDto, []) { }
 
 export class MembershipResponseDto {
   id: string;

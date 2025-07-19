@@ -155,7 +155,7 @@ describe('AccountsController', () => {
     });
   });
 
-  describe('updateUser', () => {
+  describe('updateAccount', () => {
     it('should update an account and return response DTO', async () => {
       const accountId = 'test-account-id';
       const updateDto = { name: 'Updated Account' };
@@ -166,7 +166,7 @@ describe('AccountsController', () => {
 
       mockAccountsService.updateAccount.mockResolvedValue(updatedAccount);
 
-      const result = await controller.updateUser(accountId, updateDto);
+      const result = await controller.updateAccount(accountId, updateDto);
 
       expect(mockAccountsService.updateAccount).toHaveBeenCalledWith(
         accountId,
@@ -177,13 +177,13 @@ describe('AccountsController', () => {
     });
   });
 
-  describe('deleteUser', () => {
+  describe('deleteAccount', () => {
     it('should delete an account', async () => {
       const accountId = 'test-account-id';
 
       mockAccountsService.deleteAccount.mockResolvedValue(undefined);
 
-      const result = await controller.deleteUser(accountId);
+      const result = await controller.deleteAccount(accountId);
 
       expect(mockAccountsService.deleteAccount).toHaveBeenCalledWith(accountId);
       expect(result).toBeUndefined();
