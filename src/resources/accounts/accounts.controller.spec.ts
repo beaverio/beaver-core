@@ -68,7 +68,7 @@ describe('AccountsController', () => {
   };
 
   const mockMembershipsService = {
-    findAccountMemberships: jest.fn(),
+    findFamilyMemberships: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -137,67 +137,67 @@ describe('AccountsController', () => {
 
   describe('getSelf', () => {
     it('should return a specific account', async () => {
-      const accountId = 'test-account-id';
+      const familyId = 'test-account-id';
       const account = createMockAccount({
-        id: accountId,
+        id: familyId,
         name: 'Specific Account',
       });
 
       mockAccountsService.getAccount.mockResolvedValue(account);
 
-      const result = await controller.getSelf(accountId);
+      const result = await controller.getSelf(familyId);
 
       expect(mockAccountsService.getAccount).toHaveBeenCalledWith({
-        id: accountId,
+        id: familyId,
       });
-      expect(result.id).toBe(accountId);
+      expect(result.id).toBe(familyId);
       expect(result.name).toBe('Specific Account');
     });
   });
 
   describe('updateAccount', () => {
     it('should update an account and return response DTO', async () => {
-      const accountId = 'test-account-id';
+      const familyId = 'test-account-id';
       const updateDto = { name: 'Updated Account' };
       const updatedAccount = createMockAccount({
-        id: accountId,
+        id: familyId,
         name: 'Updated Account',
       });
 
       mockAccountsService.updateAccount.mockResolvedValue(updatedAccount);
 
-      const result = await controller.updateAccount(accountId, updateDto);
+      const result = await controller.updateAccount(familyId, updateDto);
 
       expect(mockAccountsService.updateAccount).toHaveBeenCalledWith(
-        accountId,
+        familyId,
         updateDto,
       );
-      expect(result.id).toBe(accountId);
+      expect(result.id).toBe(familyId);
       expect(result.name).toBe('Updated Account');
     });
   });
 
   describe('deleteAccount', () => {
     it('should delete an account', async () => {
-      const accountId = 'test-account-id';
+      const familyId = 'test-account-id';
 
       mockAccountsService.deleteAccount.mockResolvedValue(undefined);
 
-      const result = await controller.deleteAccount(accountId);
+      const result = await controller.deleteAccount(familyId);
 
-      expect(mockAccountsService.deleteAccount).toHaveBeenCalledWith(accountId);
+      expect(mockAccountsService.deleteAccount).toHaveBeenCalledWith(familyId);
       expect(result).toBeUndefined();
     });
   });
 
   describe('getAccountMemberships', () => {
     it('should return account memberships', async () => {
-      const accountId = 'test-account-id';
+      const familyId = 'test-account-id';
       const mockMemberships: MembershipResponseDto[] = [
         {
           id: 'membership-id-1',
           userId: 'user-id-1',
-          accountId: 'test-account-id',
+          familyId: 'test-account-id',
           permissions: ['account:read', 'account:write'],
           createdAt: '2023-01-01T00:00:00Z',
           updatedAt: '2023-01-02T00:00:00Z',
@@ -205,22 +205,22 @@ describe('AccountsController', () => {
             id: 'user-id-1',
             email: 'user1@example.com',
           },
-          account: {
-            id: 'test-account-id',
-            name: 'Test Account',
+          family: {
+            id: 'test-family-id',
+            name: 'Test Family',
           },
         },
       ];
 
-      mockMembershipsService.findAccountMemberships.mockResolvedValue(
+      mockMembershipsService.findFamilyMemberships.mockResolvedValue(
         mockMemberships,
       );
 
-      const result = await controller.getAccountMemberships(accountId);
+      const result = await controller.getAccountMemberships(familyId);
 
       expect(
-        mockMembershipsService.findAccountMemberships,
-      ).toHaveBeenCalledWith(accountId);
+        mockMembershipsService.findFamilyMemberships,
+      ).toHaveBeenCalledWith(familyId);
       expect(result).toEqual(mockMemberships);
     });
   });

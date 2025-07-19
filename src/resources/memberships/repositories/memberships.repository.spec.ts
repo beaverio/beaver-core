@@ -17,8 +17,8 @@ describe('MembershipsRepository', () => {
   const mockMembership: Membership = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     userId: '123e4567-e89b-12d3-a456-426614174001',
-    accountId: '123e4567-e89b-12d3-a456-426614174002',
-    permissions: ['account:read', 'account:write'],
+    familyId: '123e4567-e89b-12d3-a456-426614174002',
+    permissions: ['family:read', 'family:write'],
     createdAt: Date.now(),
     updatedAt: Date.now(),
     setCreationTimestamps: jest.fn(),
@@ -30,7 +30,7 @@ describe('MembershipsRepository', () => {
       return new Date(this.updatedAt);
     },
     user: null as any,
-    account: null as any,
+    family: null as any,
   };
 
   beforeEach(async () => {
@@ -54,7 +54,7 @@ describe('MembershipsRepository', () => {
       getEntityCacheKey: jest.fn(),
     };
 
-    const mockAccountsRepository = {
+    const mockFamiliesRepository = {
       getEntityCacheKey: jest.fn(),
     };
 
@@ -74,8 +74,8 @@ describe('MembershipsRepository', () => {
           useValue: mockUsersRepository,
         },
         {
-          provide: 'IAccountsRepository',
-          useValue: mockAccountsRepository,
+          provide: 'IFamiliesRepository',
+          useValue: mockFamiliesRepository,
         },
       ],
     }).compile();
@@ -91,8 +91,8 @@ describe('MembershipsRepository', () => {
     it('should create and cache a membership', async () => {
       const createDto: CreateMembershipDto = {
         userId: '123e4567-e89b-12d3-a456-426614174001',
-        accountId: '123e4567-e89b-12d3-a456-426614174002',
-        permissions: ['account:read', 'account:write'],
+        familyId: '123e4567-e89b-12d3-a456-426614174002',
+        permissions: ['family:read', 'family:write'],
       };
 
       mockRepo.create = jest.fn().mockReturnValue(mockMembership);
@@ -140,7 +140,7 @@ describe('MembershipsRepository', () => {
       );
       expect(mockRepo.findOne).toHaveBeenCalledWith({
         where: query,
-        relations: ['user', 'account'],
+        relations: ['user', 'family'],
       });
       expect(mockCacheService.set).toHaveBeenCalledWith(
         'membership:123e4567-e89b-12d3-a456-426614174000',
@@ -158,7 +158,7 @@ describe('MembershipsRepository', () => {
 
       expect(mockRepo.findOne).toHaveBeenCalledWith({
         where: query,
-        relations: ['user', 'account'],
+        relations: ['user', 'family'],
       });
       expect(result).toBeNull();
     });
@@ -167,7 +167,7 @@ describe('MembershipsRepository', () => {
   describe('update', () => {
     it('should update membership and invalidate cache', async () => {
       const updateDto: UpdateMembershipDto = {
-        permissions: ['account:read'],
+        permissions: ['family:read'],
       };
       const id = '123e4567-e89b-12d3-a456-426614174000';
 
@@ -181,7 +181,7 @@ describe('MembershipsRepository', () => {
       expect(mockRepo.update).toHaveBeenCalledWith(id, updateDto);
       expect(mockRepo.findOne).toHaveBeenCalledWith({
         where: { id },
-        relations: ['user', 'account'],
+        relations: ['user', 'family'],
       });
       expect(result).toEqual(mockMembership);
     });
@@ -227,7 +227,7 @@ describe('MembershipsRepository', () => {
 
       expect(mockRepo.find).toHaveBeenCalledWith({
         where: { userId },
-        relations: ['account'],
+        relations: ['family'],
       });
       expect(mockCacheService.set).toHaveBeenCalledWith(
         'membership:user:123e4567-e89b-12d3-a456-426614174001:memberships',
@@ -238,35 +238,35 @@ describe('MembershipsRepository', () => {
     });
   });
 
-  describe('findByAccountId', () => {
+  describe('findByFamilyId', () => {
     it('should return account memberships from database', async () => {
-      const accountId = '123e4567-e89b-12d3-a456-426614174002';
+      const familyId = '123e4567-e89b-12d3-a456-426614174002';
       const memberships = [mockMembership];
       mockCacheService.get = jest.fn().mockResolvedValue(null);
       mockRepo.find = jest.fn().mockResolvedValue(memberships);
       mockCacheService.set = jest.fn().mockResolvedValue(undefined);
 
-      const result = await repository.findByAccountId(accountId);
+      const result = await repository.findByFamilyId(familyId);
 
       expect(mockRepo.find).toHaveBeenCalledWith({
-        where: { accountId },
+        where: { familyId },
         relations: ['user'],
       });
       expect(result).toEqual(memberships);
     });
   });
 
-  describe('findByUserAndAccount', () => {
-    it('should find membership by userId and accountId', async () => {
+  describe('findByUserAndFamily', () => {
+    it('should find membership by userId and familyId', async () => {
       const userId = '123e4567-e89b-12d3-a456-426614174001';
-      const accountId = '123e4567-e89b-12d3-a456-426614174002';
+      const familyId = '123e4567-e89b-12d3-a456-426614174002';
       mockRepo.findOne = jest.fn().mockResolvedValue(mockMembership);
 
-      const result = await repository.findByUserAndAccount(userId, accountId);
+      const result = await repository.findByUserAndFamily(userId, familyId);
 
       expect(mockRepo.findOne).toHaveBeenCalledWith({
-        where: { userId, accountId },
-        relations: ['user', 'account'],
+        where: { userId, familyId },
+        relations: ['user', 'family'],
       });
       expect(result).toEqual(mockMembership);
     });
