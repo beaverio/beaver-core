@@ -61,23 +61,6 @@ describe('UsersRepository', () => {
 
   const mockUser = createMockUser();
 
-  const mockUsers: User[] = [
-    createMockUser({
-      id: 'user-1',
-      email: 'user1@example.com',
-      createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
-      updatedAt: new Date('2023-01-01T00:00:00Z').getTime(),
-      lastLogin: null,
-    }),
-    createMockUser({
-      id: 'user-2',
-      email: 'user2@example.com',
-      createdAt: new Date('2023-01-02T00:00:00Z').getTime(),
-      updatedAt: new Date('2023-01-02T00:00:00Z').getTime(),
-      lastLogin: null,
-    }),
-  ];
-
   const mockPaginatedResult: Paginated<User> = {
     data: [mockUser],
     meta: {
@@ -613,13 +596,12 @@ describe('UsersRepository', () => {
 
     it('should fetch from database and cache if not in cache', async () => {
       cacheService.get.mockResolvedValue(null);
-      queryBuilder.getOne.mockResolvedValue(mockUser);
+      usersRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await repository.findOne({ id: 'test-id' });
 
-      expect(usersRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', {
-        id: 'test-id',
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
       });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${mockUser.id}`,
@@ -631,7 +613,7 @@ describe('UsersRepository', () => {
 
     it('should return null when user not found', async () => {
       cacheService.get.mockResolvedValue(null);
-      queryBuilder.getOne.mockResolvedValue(null);
+      usersRepository.findOne.mockResolvedValue(null);
 
       const result = await repository.findOne({ id: 'non-existent-id' });
 

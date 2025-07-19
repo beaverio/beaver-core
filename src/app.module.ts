@@ -35,7 +35,7 @@ import { AccountsModule } from './resources/accounts/accounts.module';
     AuthModule,
     HealthModule,
     UsersModule,
-    AccountsModule
+    AccountsModule,
   ],
   providers: [
     {
@@ -44,4 +44,4 @@ import { AccountsModule } from './resources/accounts/accounts.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

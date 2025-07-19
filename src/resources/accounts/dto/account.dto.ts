@@ -9,12 +9,12 @@ export class AccountDto extends BaseDto {
 }
 
 // Upsert DTO - everything is optional
-export class UpsertAccountDto extends CreateUpdateDto(AccountDto, []) { }
+export class UpsertAccountDto extends CreateUpdateDto(AccountDto, []) {}
 
 // Query Params DTO - get one account by id
 export class QueryParamsAccountDto extends PartialType(
   PickType(AccountDto, ['id'] as const),
-) { }
+) {}
 
 export class AccountResponseDto extends PickType(AccountDto, [
   'id',
@@ -44,6 +44,6 @@ export class AccountResponseDto extends PickType(AccountDto, [
   }
 
   static fromEntities(accounts: Account[]): AccountResponseDto[] {
-    return accounts.map(account => this.fromEntity(account));
+    return accounts.map((account) => this.fromEntity(account));
   }
 }

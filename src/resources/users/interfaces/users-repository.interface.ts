@@ -9,7 +9,7 @@ import { User } from '../entities/user.entity';
 
 export interface IUsersRepository
   extends ICacheableRepository<User>,
-  IPaginatedRepository<User> {
+    IPaginatedRepository<User> {
   create(dto: CreateUserDto): Promise<User>;
   findOne(query: QueryParamsUserDto): Promise<User | null>;
   update(id: string, dto: UpdateUserDto): Promise<User>;

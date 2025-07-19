@@ -1,6 +1,6 @@
-import { Paginated, PaginateQuery } from "nestjs-paginate";
-import { QueryParamsAccountDto, UpsertAccountDto } from "../dto/account.dto";
-import { Account } from "../entities/account.entity";
+import { Paginated, PaginateQuery } from 'nestjs-paginate';
+import { QueryParamsAccountDto, UpsertAccountDto } from '../dto/account.dto';
+import { Account } from '../entities/account.entity';
 
 export interface IAccountsService {
   createAccount(dto: UpsertAccountDto): Promise<Account>;

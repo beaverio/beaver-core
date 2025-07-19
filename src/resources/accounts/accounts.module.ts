@@ -1,16 +1,23 @@
 import { Module } from '@nestjs/common';
-import { AccountsController } from './accounts.controller';
-import { AccountsRepository } from './repositories/accounts.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Account } from './entities/account.entity';
 import { CommonModule } from 'src/common/common.module';
+import { AccountsController } from './accounts.controller';
+import { Account } from './entities/account.entity';
+import { AccountsRepository } from './repositories/accounts.repository';
+import { AccountsService } from './services/accounts.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Account]), CommonModule],
   controllers: [AccountsController],
-  providers: [{
-    provide: 'IAccountsRepository',
-    useClass: AccountsRepository,
-  }],
+  providers: [
+    {
+      provide: 'IAccountsRepository',
+      useClass: AccountsRepository,
+    },
+    {
+      provide: 'IAccountsService',
+      useClass: AccountsService,
+    },
+  ],
 })
-export class AccountsModule { }
+export class AccountsModule {}

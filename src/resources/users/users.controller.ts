@@ -22,7 +22,7 @@ export class UsersController {
   constructor(
     @Inject('IUserService')
     private readonly usersService: IUserService,
-  ) { }
+  ) {}
 
   @Get()
   async getUsers(
