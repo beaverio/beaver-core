@@ -1,18 +1,18 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { User } from '../../users/entities/user.entity';
-import { Account } from '../../accounts/entities/account.entity';
+import { Family } from '../../families/entities/family.entity';
 
 @Entity('memberships')
-@Index(['userId', 'accountId'], { unique: true })
+@Index(['userId', 'familyId'], { unique: true })
 export class Membership extends BaseEntity {
   @Column({ type: 'uuid' })
   userId: string;
 
   @Column({ type: 'uuid' })
-  accountId: string;
+  familyId: string;
 
-  // Permissions array for this user on this account
+  // Permissions array for this user on this family
   @Column({ type: 'simple-array' })
   permissions: string[];
 
@@ -21,9 +21,9 @@ export class Membership extends BaseEntity {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @ManyToOne(() => Account, (account) => account.memberships, {
+  @ManyToOne(() => Family, (family) => family.memberships, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'accountId' })
-  account: Account;
+  @JoinColumn({ name: 'familyId' })
+  family: Family;
 }

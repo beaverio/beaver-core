@@ -79,6 +79,6 @@ export class AccountsController {
   async getAccountMemberships(
     @Param('accountId', new ParseUUIDPipe()) accountId: string,
   ): Promise<MembershipResponseDto[]> {
-    return this.membershipsService.findAccountMemberships(accountId);
+    return this.membershipsService.findFamilyMemberships(accountId);
   }
 }

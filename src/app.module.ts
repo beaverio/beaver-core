@@ -11,7 +11,7 @@ import { redisConfig } from './config/redis.config';
 import { typeOrmConfig } from './config/typeorm.config';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './resources/users/users.module';
-import { AccountsModule } from './resources/accounts/accounts.module';
+import { FamiliesModule } from './resources/families/families.module';
 import { MembershipsModule } from './resources/memberships/memberships.module';
 
 @Module({
@@ -36,7 +36,7 @@ import { MembershipsModule } from './resources/memberships/memberships.module';
     AuthModule,
     HealthModule,
     UsersModule,
-    AccountsModule,
+    FamiliesModule,
     MembershipsModule,
   ],
   providers: [

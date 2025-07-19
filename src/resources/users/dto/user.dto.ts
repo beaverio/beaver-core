@@ -87,7 +87,7 @@ export class UserResponseDto extends PickType(BaseUserDto, [
     // Include memberships if they are loaded
     if (user.memberships) {
       dto.memberships = user.memberships.map((membership) => ({
-        accountId: membership.accountId,
+        familyId: membership.familyId,
         permissions: membership.permissions,
       }));
     }
@@ -101,6 +101,6 @@ export class UserResponseDto extends PickType(BaseUserDto, [
 }
 
 export class UserMembershipItemDto {
-  accountId: string;
+  familyId: string;
   permissions: string[];
 }
