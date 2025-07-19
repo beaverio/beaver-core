@@ -35,7 +35,12 @@ export class AccountsService implements IAccountsService {
   }
 
   async deleteAccount(id: string): Promise<void> {
-    await this.getAccount({ id });
+    // Check if account exists before deleting (without loading relations)
+    const account = await this.accountsRepository.findOne({ id });
+
+    if (!account) {
+      throw new NotFoundException('Account not found');
+    }
 
     return this.accountsRepository.hardDelete(id);
   }

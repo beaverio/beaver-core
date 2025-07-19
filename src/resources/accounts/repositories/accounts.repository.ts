@@ -11,7 +11,8 @@ import { IAccountsRepository } from '../interfaces/accounts-repository.interface
 @Injectable()
 export class AccountsRepository
   extends BasePaginatedRepository<Account>
-  implements IAccountsRepository {
+  implements IAccountsRepository
+{
   private readonly logger = new Logger(AccountsRepository.name);
   private readonly CACHE_PREFIX = 'account:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -61,7 +62,10 @@ export class AccountsRepository
       }
     }
 
-    const account = await this.repo.findOne({ where });
+    const account = await this.repo.findOne({
+      where,
+      relations: ['memberships'],
+    });
 
     if (account) {
       await this.cacheEntity(account);
@@ -72,7 +76,10 @@ export class AccountsRepository
 
   async update(id: string, dto: UpsertAccountDto): Promise<Account> {
     await this.repo.update(id, dto);
-    const account = await this.repo.findOneBy({ id });
+    const account = await this.repo.findOne({
+      where: { id },
+      relations: ['memberships'],
+    });
 
     if (account) {
       await this.cacheEntity(account);
@@ -107,5 +114,9 @@ export class AccountsRepository
 
   getCacheKey(field: string, value: string): string {
     return `${this.CACHE_PREFIX}${field}:${value}`;
+  }
+
+  getEntityCacheKey(id: string): string {
+    return `${this.CACHE_PREFIX}${id}`;
   }
 }

@@ -602,6 +602,7 @@ describe('UsersRepository', () => {
 
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'test-id' },
+        relations: ['memberships'],
       });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${mockUser.id}`,
@@ -627,12 +628,15 @@ describe('UsersRepository', () => {
       const updateDto = { email: 'updated@example.com' };
       const updatedUser = createMockUser({ ...mockUser, ...updateDto });
 
-      usersRepository.findOneBy.mockResolvedValue(updatedUser);
+      usersRepository.findOne.mockResolvedValue(updatedUser);
 
       const result = await repository.update('test-id', updateDto);
 
       expect(usersRepository.update).toHaveBeenCalledWith('test-id', updateDto);
-      expect(usersRepository.findOneBy).toHaveBeenCalledWith({ id: 'test-id' });
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
+        relations: ['memberships'],
+      });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${updatedUser.id}`,
         updatedUser,
@@ -657,12 +661,16 @@ describe('UsersRepository', () => {
         ...mockUser,
         lastLogin: expect.any(Number),
       });
-      usersRepository.findOneBy.mockResolvedValue(updatedUser);
+      usersRepository.findOne.mockResolvedValue(updatedUser);
 
       const result = await repository.updateLastLogin('test-id');
 
       expect(usersRepository.update).toHaveBeenCalledWith('test-id', {
         lastLogin: expect.any(Number),
+      });
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
+        relations: ['memberships'],
       });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${updatedUser.id}`,

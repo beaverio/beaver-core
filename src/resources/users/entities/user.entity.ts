@@ -1,5 +1,6 @@
-import { Entity, Column, Unique } from 'typeorm';
+import { Entity, Column, Unique, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { Membership } from '../../memberships/entities/membership.entity';
 
 @Entity('users')
 @Unique(['email'])
@@ -19,4 +20,7 @@ export class User extends BaseEntity {
     },
   })
   lastLogin: number | null;
+
+  @OneToMany(() => Membership, (membership) => membership.user)
+  memberships: Membership[];
 }

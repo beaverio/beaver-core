@@ -186,6 +186,7 @@ describe('AccountsRepository', () => {
 
       expect(accountsRepository.findOne).toHaveBeenCalledWith({
         where: criteria,
+        relations: ['memberships'],
       });
       expect(result).toEqual(mockAccount);
     });
@@ -220,6 +221,7 @@ describe('AccountsRepository', () => {
       expect(cacheService.get).toHaveBeenCalledWith('account:test-id');
       expect(accountsRepository.findOne).toHaveBeenCalledWith({
         where: criteria,
+        relations: ['memberships'],
       });
       expect(cacheService.set).toHaveBeenCalledWith(
         'account:test-id',
@@ -240,12 +242,15 @@ describe('AccountsRepository', () => {
       });
 
       accountsRepository.update.mockResolvedValue({ affected: 1 } as any);
-      accountsRepository.findOneBy.mockResolvedValue(updatedAccount);
+      accountsRepository.findOne.mockResolvedValue(updatedAccount);
 
       const result = await repository.update(id, updateData);
 
       expect(accountsRepository.update).toHaveBeenCalledWith(id, updateData);
-      expect(accountsRepository.findOneBy).toHaveBeenCalledWith({ id });
+      expect(accountsRepository.findOne).toHaveBeenCalledWith({
+        where: { id },
+        relations: ['memberships'],
+      });
       expect(result).toEqual(updatedAccount);
     });
 
@@ -258,7 +263,7 @@ describe('AccountsRepository', () => {
       });
 
       accountsRepository.update.mockResolvedValue({ affected: 1 } as any);
-      accountsRepository.findOneBy.mockResolvedValue(updatedAccount);
+      accountsRepository.findOne.mockResolvedValue(updatedAccount);
 
       await repository.update(id, updateData);
 

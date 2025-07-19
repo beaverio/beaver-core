@@ -12,6 +12,7 @@ import { typeOrmConfig } from './config/typeorm.config';
 import { HealthModule } from './health/health.module';
 import { UsersModule } from './resources/users/users.module';
 import { AccountsModule } from './resources/accounts/accounts.module';
+import { MembershipsModule } from './resources/memberships/memberships.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AccountsModule } from './resources/accounts/accounts.module';
     HealthModule,
     UsersModule,
     AccountsModule,
+    MembershipsModule,
   ],
   providers: [
     {

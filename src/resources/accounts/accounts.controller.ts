@@ -16,6 +16,8 @@ import { Paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { AccountResponseDto, UpsertAccountDto } from './dto/account.dto';
 import { IAccountsService } from './interfaces/accounts-service.interface';
+import { IMembershipsService } from '../memberships/interfaces/memberships-service.interface';
+import { MembershipResponseDto } from '../memberships/dto/membership.dto';
 
 @UseGuards(JWTAuthGuard)
 @Controller('accounts')
@@ -23,6 +25,8 @@ export class AccountsController {
   constructor(
     @Inject('IAccountsService')
     private readonly accountsService: IAccountsService,
+    @Inject('IMembershipsService')
+    private readonly membershipsService: IMembershipsService,
   ) {}
 
   @Post()
@@ -56,18 +60,25 @@ export class AccountsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteUser(
+  async deleteAccount(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<void> {
     await this.accountsService.deleteAccount(id);
   }
 
   @Patch(':id')
-  async updateUser(
+  async updateAccount(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpsertAccountDto,
   ): Promise<AccountResponseDto> {
     const updatedUser = await this.accountsService.updateAccount(id, dto);
     return AccountResponseDto.fromEntity(updatedUser);
+  }
+
+  @Get(':accountId/memberships')
+  async getAccountMemberships(
+    @Param('accountId', new ParseUUIDPipe()) accountId: string,
+  ): Promise<MembershipResponseDto[]> {
+    return this.membershipsService.findAccountMemberships(accountId);
   }
 }

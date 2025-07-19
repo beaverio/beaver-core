@@ -1,5 +1,11 @@
 import { PartialType, PickType } from '@nestjs/mapped-types';
-import { IsEmail, IsStrongPassword } from 'class-validator';
+import {
+  IsEmail,
+  IsStrongPassword,
+  IsArray,
+  IsOptional,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import {
   NoSanitize,
   SanitizeText,
@@ -44,6 +50,11 @@ export class UserResponseDto extends PickType(BaseUserDto, [
   'updatedAt',
   'lastLogin',
 ] as const) {
+  @IsArray()
+  @IsOptional()
+  @Type(() => UserMembershipItemDto)
+  memberships?: UserMembershipItemDto[];
+
   static fromEntity(user: User): UserResponseDto {
     const dto = new UserResponseDto();
     dto.id = user.id;
@@ -73,10 +84,23 @@ export class UserResponseDto extends PickType(BaseUserDto, [
     dto.lastLogin =
       lastLoginMs != null ? new Date(lastLoginMs).toISOString() : null;
 
+    // Include memberships if they are loaded
+    if (user.memberships) {
+      dto.memberships = user.memberships.map((membership) => ({
+        accountId: membership.accountId,
+        permissions: membership.permissions,
+      }));
+    }
+
     return dto;
   }
 
   static fromEntities(users: User[]): UserResponseDto[] {
     return users.map((user) => this.fromEntity(user));
   }
+}
+
+export class UserMembershipItemDto {
+  accountId: string;
+  permissions: string[];
 }

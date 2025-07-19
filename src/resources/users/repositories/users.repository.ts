@@ -67,7 +67,10 @@ export class UsersRepository
       }
     }
 
-    const user = await this.repo.findOne({ where });
+    const user = await this.repo.findOne({
+      where,
+      relations: ['memberships'],
+    });
 
     if (user) {
       await this.cacheEntity(user);
@@ -78,7 +81,10 @@ export class UsersRepository
 
   async update(id: string, dto: UpdateUserDto): Promise<User> {
     await this.repo.update(id, dto);
-    const user = await this.repo.findOneBy({ id });
+    const user = await this.repo.findOne({
+      where: { id },
+      relations: ['memberships'],
+    });
 
     if (user) {
       await this.cacheEntity(user);
@@ -96,7 +102,10 @@ export class UsersRepository
     const now = Date.now();
     await this.repo.update(id, { lastLogin: now });
 
-    const user = await this.repo.findOneBy({ id });
+    const user = await this.repo.findOne({
+      where: { id },
+      relations: ['memberships'],
+    });
 
     if (user) {
       await this.cacheEntity(user);
@@ -126,5 +135,9 @@ export class UsersRepository
 
   getCacheKey(field: string, value: string): string {
     return `${this.CACHE_PREFIX}${field}:${value}`;
+  }
+
+  getEntityCacheKey(id: string): string {
+    return `${this.CACHE_PREFIX}${id}`;
   }
 }

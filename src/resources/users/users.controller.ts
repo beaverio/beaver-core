@@ -6,12 +6,16 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
+  ParseUUIDPipe,
   Patch,
   UseGuards,
 } from '@nestjs/common';
 import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
 import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { UserMembershipsResponseDto } from '../memberships/dto/membership.dto';
+import { IMembershipsService } from '../memberships/interfaces/memberships-service.interface';
 import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
 import { User } from './entities/user.entity';
 import { IUserService } from './interfaces/users-service.interface';
@@ -22,6 +26,8 @@ export class UsersController {
   constructor(
     @Inject('IUserService')
     private readonly usersService: IUserService,
+    @Inject('IMembershipsService')
+    private readonly membershipsService: IMembershipsService,
   ) {}
 
   @Get()
@@ -55,5 +61,12 @@ export class UsersController {
   ): Promise<UserResponseDto> {
     const updatedUser = await this.usersService.updateUser(user.id, dto);
     return UserResponseDto.fromEntity(updatedUser);
+  }
+
+  @Get(':userId/memberships')
+  async getUserMemberships(
+    @Param('userId', new ParseUUIDPipe()) userId: string,
+  ): Promise<UserMembershipsResponseDto> {
+    return this.membershipsService.findUserMemberships(userId);
   }
 }
