@@ -17,15 +17,15 @@ import {
   PaginationType,
   paginate,
 } from 'nestjs-paginate';
-import { UserRepository } from './user.repository';
+import { UsersRepository } from './users.repository';
 import { User } from '../entities/user.entity';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 
 const mockPaginate = paginate as jest.MockedFunction<typeof paginate>;
 
-describe('UserRepository', () => {
-  let repository: UserRepository;
-  let userRepository: jest.Mocked<Repository<User>>;
+describe('UsersRepository', () => {
+  let repository: UsersRepository;
+  let usersRepository: jest.Mocked<Repository<User>>;
   let cacheService: jest.Mocked<ICacheService>;
   let queryBuilder: jest.Mocked<SelectQueryBuilder<User>>;
 
@@ -61,23 +61,6 @@ describe('UserRepository', () => {
 
   const mockUser = createMockUser();
 
-  const mockUsers: User[] = [
-    createMockUser({
-      id: 'user-1',
-      email: 'user1@example.com',
-      createdAt: new Date('2023-01-01T00:00:00Z').getTime(),
-      updatedAt: new Date('2023-01-01T00:00:00Z').getTime(),
-      lastLogin: null,
-    }),
-    createMockUser({
-      id: 'user-2',
-      email: 'user2@example.com',
-      createdAt: new Date('2023-01-02T00:00:00Z').getTime(),
-      updatedAt: new Date('2023-01-02T00:00:00Z').getTime(),
-      lastLogin: null,
-    }),
-  ];
-
   const mockPaginatedResult: Paginated<User> = {
     data: [mockUser],
     meta: {
@@ -112,7 +95,7 @@ describe('UserRepository', () => {
     } as unknown as jest.Mocked<SelectQueryBuilder<User>>;
 
     // Create mocked repository
-    userRepository = {
+    usersRepository = {
       save: jest.fn(),
       create: jest.fn(),
       findOne: jest.fn(),
@@ -135,10 +118,10 @@ describe('UserRepository', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UserRepository,
+        UsersRepository,
         {
           provide: getRepositoryToken(User),
-          useValue: userRepository,
+          useValue: usersRepository,
         },
         {
           provide: 'ICacheService',
@@ -147,7 +130,7 @@ describe('UserRepository', () => {
       ],
     }).compile();
 
-    repository = module.get<UserRepository>(UserRepository);
+    repository = module.get<UsersRepository>(UsersRepository);
 
     // Reset all mocks before each test
     jest.clearAllMocks();
@@ -175,7 +158,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           defaultLimit: 50,
@@ -215,7 +198,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           filterableColumns: {
@@ -243,7 +226,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           filterableColumns: {
@@ -271,7 +254,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           searchableColumns: ['email'],
@@ -296,7 +279,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
@@ -321,7 +304,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
@@ -346,7 +329,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
@@ -371,7 +354,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
@@ -396,7 +379,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
@@ -421,7 +404,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
@@ -446,7 +429,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
           sortableColumns: ['createdAt', 'updatedAt', 'id'],
@@ -477,7 +460,7 @@ describe('UserRepository', () => {
       // Should call paginate with the query that has limit set to 50 (default)
       expect(mockPaginate).toHaveBeenCalledWith(
         expect.objectContaining({ limit: 50 }),
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
         }),
@@ -500,7 +483,7 @@ describe('UserRepository', () => {
 
       expect(mockPaginate).toHaveBeenCalledWith(
         query,
-        userRepository,
+        usersRepository,
         expect.objectContaining({
           paginationType: PaginationType.LIMIT_AND_OFFSET,
         }),
@@ -584,47 +567,19 @@ describe('UserRepository', () => {
       };
 
       const createdUser = createMockUser({ email: createUserDto.email });
-      userRepository.create.mockReturnValue(createdUser);
-      userRepository.save.mockResolvedValue(mockUser);
+      usersRepository.create.mockReturnValue(createdUser);
+      usersRepository.save.mockResolvedValue(mockUser);
 
       const result = await repository.create(createUserDto);
 
-      expect(userRepository.create).toHaveBeenCalledWith(createUserDto);
-      expect(userRepository.save).toHaveBeenCalledWith(createdUser);
+      expect(usersRepository.create).toHaveBeenCalledWith(createUserDto);
+      expect(usersRepository.save).toHaveBeenCalledWith(createdUser);
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${mockUser.id}`,
         mockUser,
         expect.any(Number),
       );
       expect(result).toEqual(mockUser);
-    });
-  });
-
-  describe('findAll', () => {
-    it('should find users with query filters and exclude deleted', async () => {
-      queryBuilder.getMany.mockResolvedValue(mockUsers);
-
-      const result = await repository.findAll({ email: 'test@example.com' });
-
-      expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
-        'user.email = :email',
-        {
-          email: 'test@example.com',
-        },
-      );
-      expect(result).toEqual(mockUsers);
-    });
-
-    it('should find users with id filter', async () => {
-      queryBuilder.getMany.mockResolvedValue([mockUser]);
-
-      const result = await repository.findAll({ id: 'test-id' });
-
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', {
-        id: 'test-id',
-      });
-      expect(result).toEqual([mockUser]);
     });
   });
 
@@ -635,19 +590,18 @@ describe('UserRepository', () => {
       const result = await repository.findOne({ id: 'test-id' });
 
       expect(cacheService.get).toHaveBeenCalledWith('user:test-id');
-      expect(userRepository.createQueryBuilder).not.toHaveBeenCalled();
+      expect(usersRepository.createQueryBuilder).not.toHaveBeenCalled();
       expect(result).toEqual(mockUser);
     });
 
     it('should fetch from database and cache if not in cache', async () => {
       cacheService.get.mockResolvedValue(null);
-      queryBuilder.getOne.mockResolvedValue(mockUser);
+      usersRepository.findOne.mockResolvedValue(mockUser);
 
       const result = await repository.findOne({ id: 'test-id' });
 
-      expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('user.id = :id', {
-        id: 'test-id',
+      expect(usersRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 'test-id' },
       });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${mockUser.id}`,
@@ -659,7 +613,7 @@ describe('UserRepository', () => {
 
     it('should return null when user not found', async () => {
       cacheService.get.mockResolvedValue(null);
-      queryBuilder.getOne.mockResolvedValue(null);
+      usersRepository.findOne.mockResolvedValue(null);
 
       const result = await repository.findOne({ id: 'non-existent-id' });
 
@@ -673,12 +627,12 @@ describe('UserRepository', () => {
       const updateDto = { email: 'updated@example.com' };
       const updatedUser = createMockUser({ ...mockUser, ...updateDto });
 
-      userRepository.findOneBy.mockResolvedValue(updatedUser);
+      usersRepository.findOneBy.mockResolvedValue(updatedUser);
 
       const result = await repository.update('test-id', updateDto);
 
-      expect(userRepository.update).toHaveBeenCalledWith('test-id', updateDto);
-      expect(userRepository.findOneBy).toHaveBeenCalledWith({ id: 'test-id' });
+      expect(usersRepository.update).toHaveBeenCalledWith('test-id', updateDto);
+      expect(usersRepository.findOneBy).toHaveBeenCalledWith({ id: 'test-id' });
       expect(cacheService.set).toHaveBeenCalledWith(
         `user:${updatedUser.id}`,
         updatedUser,
@@ -693,7 +647,7 @@ describe('UserRepository', () => {
       await repository.hardDelete('test-id');
 
       expect(cacheService.delete).toHaveBeenCalledWith('user:test-id');
-      expect(userRepository.delete).toHaveBeenCalledWith('test-id');
+      expect(usersRepository.delete).toHaveBeenCalledWith('test-id');
     });
   });
 
@@ -703,11 +657,11 @@ describe('UserRepository', () => {
         ...mockUser,
         lastLogin: expect.any(Number),
       });
-      userRepository.findOneBy.mockResolvedValue(updatedUser);
+      usersRepository.findOneBy.mockResolvedValue(updatedUser);
 
       const result = await repository.updateLastLogin('test-id');
 
-      expect(userRepository.update).toHaveBeenCalledWith('test-id', {
+      expect(usersRepository.update).toHaveBeenCalledWith('test-id', {
         lastLogin: expect.any(Number),
       });
       expect(cacheService.set).toHaveBeenCalledWith(

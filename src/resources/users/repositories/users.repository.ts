@@ -10,14 +10,14 @@ import {
   UpdateUserDto,
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
-import { IUserRepository } from '../interfaces/user-repository.interface';
+import { IUsersRepository } from '../interfaces/users-repository.interface';
 
 @Injectable()
-export class UserRepository
+export class UsersRepository
   extends BasePaginatedRepository<User>
-  implements IUserRepository
+  implements IUsersRepository
 {
-  private readonly logger = new Logger(UserRepository.name);
+  private readonly logger = new Logger(UsersRepository.name);
   private readonly CACHE_PREFIX = 'user:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
@@ -58,22 +58,7 @@ export class UserRepository
     return savedUser;
   }
 
-  async findAll(where: QueryParamsUserDto): Promise<User[]> {
-    const queryBuilder = this.repo.createQueryBuilder('user');
-
-    if (where.email) {
-      queryBuilder.andWhere('user.email = :email', { email: where.email });
-    }
-
-    if (where.id) {
-      queryBuilder.andWhere('user.id = :id', { id: where.id });
-    }
-
-    return await queryBuilder.getMany();
-  }
-
   async findOne(where: QueryParamsUserDto): Promise<User | null> {
-    // Try cache first
     if (where.id) {
       const cached = await this.getCachedEntity(where.id);
       if (cached) {
@@ -82,17 +67,7 @@ export class UserRepository
       }
     }
 
-    const queryBuilder = this.repo.createQueryBuilder('user');
-
-    if (where.email) {
-      queryBuilder.andWhere('user.email = :email', { email: where.email });
-    }
-
-    if (where.id) {
-      queryBuilder.andWhere('user.id = :id', { id: where.id });
-    }
-
-    const user = await queryBuilder.getOne();
+    const user = await this.repo.findOne({ where });
 
     if (user) {
       await this.cacheEntity(user);

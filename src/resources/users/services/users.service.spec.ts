@@ -74,7 +74,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         {
-          provide: 'IUserRepository',
+          provide: 'IUsersRepository',
           useValue: mockUserRepository,
         },
       ],

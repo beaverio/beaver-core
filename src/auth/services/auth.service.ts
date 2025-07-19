@@ -12,7 +12,7 @@ import { createHash } from 'crypto';
 import { Response } from 'express';
 import { CreateUserDto } from 'src/resources/users/dto/user.dto';
 import { User } from 'src/resources/users/entities/user.entity';
-import { IUserService } from 'src/resources/users/interfaces/user-service.interface';
+import { IUserService } from 'src/resources/users/interfaces/users-service.interface';
 import { ISessionService } from '../../common/interfaces/session-service.interface';
 import { IAuthService } from '../interfaces/auth-service.interface';
 import { IRefreshTokenRepository } from '../interfaces/refresh-token-repository.interface';
