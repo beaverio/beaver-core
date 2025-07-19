@@ -4,6 +4,8 @@ import { PaginateConfig, PaginationType } from 'nestjs-paginate';
 import { Repository } from 'typeorm';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 import { BasePaginatedRepository } from '../../../common/repositories/base-paginated.repository';
+import { IAccountsRepository } from '../../accounts/interfaces/accounts-repository.interface';
+import { IUsersRepository } from '../../users/interfaces/users-repository.interface';
 import {
   CreateMembershipDto,
   QueryParamsMembershipDto,
@@ -15,8 +17,7 @@ import { IMembershipsRepository } from '../interfaces/memberships-repository.int
 @Injectable()
 export class MembershipsRepository
   extends BasePaginatedRepository<Membership>
-  implements IMembershipsRepository
-{
+  implements IMembershipsRepository {
   private readonly logger = new Logger(MembershipsRepository.name);
   private readonly CACHE_PREFIX = 'membership:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -26,6 +27,10 @@ export class MembershipsRepository
     private readonly repo: Repository<Membership>,
     @Inject('ICacheService')
     private readonly cacheService: ICacheService,
+    @Inject('IUsersRepository')
+    private readonly usersRepository: IUsersRepository,
+    @Inject('IAccountsRepository')
+    private readonly accountsRepository: IAccountsRepository,
   ) {
     super(repo);
   }
@@ -56,6 +61,9 @@ export class MembershipsRepository
     await this.cacheEntity(savedMembership);
     await this.invalidateUserMembershipsCache(dto.userId);
     await this.invalidateAccountMembershipsCache(dto.accountId);
+    // Invalidate user and account entity caches since their memberships relationship changed
+    await this.invalidateUserEntityCache(dto.userId);
+    await this.invalidateAccountEntityCache(dto.accountId);
     this.logger.debug(`Membership created and cached: ${savedMembership.id}`);
     return savedMembership;
   }
@@ -92,6 +100,9 @@ export class MembershipsRepository
       await this.cacheEntity(membership);
       await this.invalidateUserMembershipsCache(membership.userId);
       await this.invalidateAccountMembershipsCache(membership.accountId);
+      // Invalidate user and account entity caches since their memberships relationship changed
+      await this.invalidateUserEntityCache(membership.userId);
+      await this.invalidateAccountEntityCache(membership.accountId);
     }
 
     return membership!;
@@ -103,6 +114,9 @@ export class MembershipsRepository
       await this.invalidateEntity(id);
       await this.invalidateUserMembershipsCache(membership.userId);
       await this.invalidateAccountMembershipsCache(membership.accountId);
+      // Invalidate user and account entity caches since their memberships relationship changed
+      await this.invalidateUserEntityCache(membership.userId);
+      await this.invalidateAccountEntityCache(membership.accountId);
     }
     await this.repo.delete(id);
   }
@@ -172,6 +186,9 @@ export class MembershipsRepository
     await this.invalidateEntity(entity.id);
     await this.invalidateUserMembershipsCache(entity.userId);
     await this.invalidateAccountMembershipsCache(entity.accountId);
+    // Invalidate user and account entity caches since their memberships relationship changed
+    await this.invalidateUserEntityCache(entity.userId);
+    await this.invalidateAccountEntityCache(entity.accountId);
   }
 
   private async invalidateUserMembershipsCache(userId: string): Promise<void> {
@@ -186,7 +203,21 @@ export class MembershipsRepository
     await this.cacheService.delete(key);
   }
 
+  private async invalidateUserEntityCache(userId: string): Promise<void> {
+    const userCacheKey = this.usersRepository.getEntityCacheKey(userId);
+    await this.cacheService.delete(userCacheKey);
+  }
+
+  private async invalidateAccountEntityCache(accountId: string): Promise<void> {
+    const accountCacheKey = this.accountsRepository.getEntityCacheKey(accountId);
+    await this.cacheService.delete(accountCacheKey);
+  }
+
   getCacheKey(field: string, value: string): string {
     return `${this.CACHE_PREFIX}${field}:${value}`;
+  }
+
+  getEntityCacheKey(id: string): string {
+    return `${this.CACHE_PREFIX}${id}`;
   }
 }

@@ -116,4 +116,8 @@ export class AccountsRepository
   getCacheKey(field: string, value: string): string {
     return `${this.CACHE_PREFIX}${field}:${value}`;
   }
+
+  getEntityCacheKey(id: string): string {
+    return `${this.CACHE_PREFIX}${id}`;
+  }
 }
