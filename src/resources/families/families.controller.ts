@@ -30,9 +30,7 @@ export class FamiliesController {
   ) {}
 
   @Post()
-  async createFamily(
-    @Body() dto: UpsertFamilyDto,
-  ): Promise<FamilyResponseDto> {
+  async createFamily(@Body() dto: UpsertFamilyDto): Promise<FamilyResponseDto> {
     const family = await this.familiesService.createFamily(dto);
     return FamilyResponseDto.fromEntity(family);
   }

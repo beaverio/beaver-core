@@ -210,8 +210,7 @@ export class MembershipsRepository
   }
 
   private async invalidateFamilyEntityCache(familyId: string): Promise<void> {
-    const familyCacheKey =
-      this.familiesRepository.getEntityCacheKey(familyId);
+    const familyCacheKey = this.familiesRepository.getEntityCacheKey(familyId);
     await this.cacheService.delete(familyCacheKey);
   }
 

@@ -218,9 +218,9 @@ describe('AccountsController', () => {
 
       const result = await controller.getAccountMemberships(familyId);
 
-      expect(
-        mockMembershipsService.findFamilyMemberships,
-      ).toHaveBeenCalledWith(familyId);
+      expect(mockMembershipsService.findFamilyMemberships).toHaveBeenCalledWith(
+        familyId,
+      );
       expect(result).toEqual(mockMemberships);
     });
   });

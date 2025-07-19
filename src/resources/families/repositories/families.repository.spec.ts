@@ -1,22 +1,9 @@
-// Mock nestjs-paginate
-jest.mock('nestjs-paginate', () => {
-  const originalModule = jest.requireActual('nestjs-paginate');
-
-  return {
-    ...originalModule,
-    paginate: jest.fn(),
-  };
-});
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 import { Family } from '../entities/family.entity';
 import { FamiliesRepository } from './families.repository';
-
-const mockPaginate = paginate as jest.MockedFunction<typeof paginate>;
 
 describe('FamiliesRepository', () => {
   let repository: FamiliesRepository;
@@ -197,7 +184,10 @@ describe('FamiliesRepository', () => {
 
       const result = await repository.update(familyId, updateDto);
 
-      expect(familiesRepository.update).toHaveBeenCalledWith(familyId, updateDto);
+      expect(familiesRepository.update).toHaveBeenCalledWith(
+        familyId,
+        updateDto,
+      );
       expect(familiesRepository.findOne).toHaveBeenCalledWith({
         where: { id: familyId },
         relations: ['memberships'],

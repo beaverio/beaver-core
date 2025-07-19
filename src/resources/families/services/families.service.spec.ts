@@ -107,7 +107,10 @@ describe('FamiliesService', () => {
 
       const result = await service.updateFamily(familyId, updateDto);
 
-      expect(familiesRepository.update).toHaveBeenCalledWith(familyId, updateDto);
+      expect(familiesRepository.update).toHaveBeenCalledWith(
+        familyId,
+        updateDto,
+      );
       expect(result).toEqual(mockFamily);
     });
   });
@@ -144,8 +147,8 @@ describe('FamiliesService', () => {
 
   describe('getFamilies', () => {
     it('should return paginated families', async () => {
-      const query = { 
-        page: 1, 
+      const query = {
+        page: 1,
         limit: 10,
         path: '/families',
         sortBy: [],
@@ -174,7 +177,9 @@ describe('FamiliesService', () => {
         },
       };
 
-      familiesRepository.findPaginated.mockResolvedValue(mockPaginatedResult as any);
+      familiesRepository.findPaginated.mockResolvedValue(
+        mockPaginatedResult as any,
+      );
 
       const result = await service.getFamilies(query as any);
 

@@ -106,7 +106,10 @@ describe('FamiliesController', () => {
 
       const result = await controller.updateFamily(familyId, updateDto);
 
-      expect(familiesService.updateFamily).toHaveBeenCalledWith(familyId, updateDto);
+      expect(familiesService.updateFamily).toHaveBeenCalledWith(
+        familyId,
+        updateDto,
+      );
       expect(result).toBeInstanceOf(FamilyResponseDto);
       expect(result.name).toBe('Updated Family');
     });
@@ -126,8 +129,8 @@ describe('FamiliesController', () => {
 
   describe('getFamilies', () => {
     it('should return paginated families', async () => {
-      const query = { 
-        page: 1, 
+      const query = {
+        page: 1,
         limit: 10,
         path: '/families',
         sortBy: [],
@@ -180,11 +183,15 @@ describe('FamiliesController', () => {
         },
       ];
 
-      membershipsService.findFamilyMemberships.mockResolvedValue(mockMemberships);
+      membershipsService.findFamilyMemberships.mockResolvedValue(
+        mockMemberships,
+      );
 
       const result = await controller.getFamilyMemberships(familyId);
 
-      expect(membershipsService.findFamilyMemberships).toHaveBeenCalledWith(familyId);
+      expect(membershipsService.findFamilyMemberships).toHaveBeenCalledWith(
+        familyId,
+      );
       expect(result).toEqual(mockMemberships);
     });
   });
