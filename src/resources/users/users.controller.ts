@@ -28,7 +28,7 @@ export class UsersController {
     private readonly usersService: IUserService,
     @Inject('IMembershipsService')
     private readonly membershipsService: IMembershipsService,
-  ) { }
+  ) {}
 
   @Get()
   async getUsers(
@@ -44,7 +44,7 @@ export class UsersController {
   }
 
   @Get('self')
-  async getSelf(@CurrentUser() user: User): Promise<UserResponseDto> {
+  getSelf(@CurrentUser() user: User): UserResponseDto {
     return UserResponseDto.fromEntity(user);
   }
 

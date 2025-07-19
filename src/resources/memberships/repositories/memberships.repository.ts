@@ -17,7 +17,8 @@ import { IMembershipsRepository } from '../interfaces/memberships-repository.int
 @Injectable()
 export class MembershipsRepository
   extends BasePaginatedRepository<Membership>
-  implements IMembershipsRepository {
+  implements IMembershipsRepository
+{
   private readonly logger = new Logger(MembershipsRepository.name);
   private readonly CACHE_PREFIX = 'membership:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -209,7 +210,8 @@ export class MembershipsRepository
   }
 
   private async invalidateAccountEntityCache(accountId: string): Promise<void> {
-    const accountCacheKey = this.accountsRepository.getEntityCacheKey(accountId);
+    const accountCacheKey =
+      this.accountsRepository.getEntityCacheKey(accountId);
     await this.cacheService.delete(accountCacheKey);
   }
 

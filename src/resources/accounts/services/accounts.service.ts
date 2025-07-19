@@ -10,7 +10,7 @@ export class AccountsService implements IAccountsService {
   constructor(
     @Inject('IAccountsRepository')
     private readonly accountsRepository: IAccountsRepository,
-  ) { }
+  ) {}
 
   async createAccount(dto: UpsertAccountDto): Promise<Account> {
     return this.accountsRepository.create(dto);

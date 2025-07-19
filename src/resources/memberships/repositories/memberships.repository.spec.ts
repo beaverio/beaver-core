@@ -50,6 +50,14 @@ describe('MembershipsRepository', () => {
       delete: jest.fn(),
     };
 
+    const mockUsersRepository = {
+      getEntityCacheKey: jest.fn(),
+    };
+
+    const mockAccountsRepository = {
+      getEntityCacheKey: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MembershipsRepository,
@@ -60,6 +68,14 @@ describe('MembershipsRepository', () => {
         {
           provide: 'ICacheService',
           useValue: mockCacheService,
+        },
+        {
+          provide: 'IUsersRepository',
+          useValue: mockUsersRepository,
+        },
+        {
+          provide: 'IAccountsRepository',
+          useValue: mockAccountsRepository,
         },
       ],
     }).compile();
@@ -182,7 +198,7 @@ describe('MembershipsRepository', () => {
 
       expect(mockRepo.findOneBy).toHaveBeenCalledWith({ id });
       expect(mockRepo.delete).toHaveBeenCalledWith(id);
-      expect(mockCacheService.delete).toHaveBeenCalledTimes(3); // entity, user memberships, account memberships
+      expect(mockCacheService.delete).toHaveBeenCalledTimes(5); // entity, user memberships, account memberships, user entity, account entity
     });
   });
 

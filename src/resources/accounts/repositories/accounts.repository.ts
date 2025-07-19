@@ -11,7 +11,8 @@ import { IAccountsRepository } from '../interfaces/accounts-repository.interface
 @Injectable()
 export class AccountsRepository
   extends BasePaginatedRepository<Account>
-  implements IAccountsRepository {
+  implements IAccountsRepository
+{
   private readonly logger = new Logger(AccountsRepository.name);
   private readonly CACHE_PREFIX = 'account:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -52,9 +53,7 @@ export class AccountsRepository
     return savedAccount;
   }
 
-  async findOne(
-    where: QueryParamsAccountDto,
-  ): Promise<Account | null> {
+  async findOne(where: QueryParamsAccountDto): Promise<Account | null> {
     if (where.id) {
       const cached = await this.getCachedEntity(where.id);
       if (cached) {
