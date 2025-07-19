@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { IMembershipsRepository } from '../interfaces/memberships-repository.interface';
 import { IUsersRepository } from '../../users/interfaces/users-repository.interface';
-import { IAccountsRepository } from '../../accounts/interfaces/accounts-repository.interface';
+import { IFamiliesRepository } from '../../families/interfaces/families-repository.interface';
 import { MembershipsService } from './memberships.service';
 import {
   CreateMembershipDto,
@@ -14,13 +14,13 @@ import {
 } from '../dto/membership.dto';
 import { Membership } from '../entities/membership.entity';
 import { User } from '../../users/entities/user.entity';
-import { Account } from '../../accounts/entities/account.entity';
+import { Family } from '../../families/entities/family.entity';
 
 describe('MembershipsService', () => {
   let service: MembershipsService;
   let membershipsRepository: Partial<IMembershipsRepository>;
   let usersRepository: Partial<IUsersRepository>;
-  let accountsRepository: Partial<IAccountsRepository>;
+  let familiesRepository: Partial<IFamiliesRepository>;
 
   const mockUser: User = {
     id: '123e4567-e89b-12d3-a456-426614174001',
@@ -40,9 +40,9 @@ describe('MembershipsService', () => {
     memberships: [],
   };
 
-  const mockAccount: Account = {
+  const mockFamily: Family = {
     id: '123e4567-e89b-12d3-a456-426614174002',
-    name: 'Test Account',
+    name: 'Test Family',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     setCreationTimestamps: jest.fn(),
@@ -59,8 +59,8 @@ describe('MembershipsService', () => {
   const mockMembership: Membership = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     userId: mockUser.id,
-    accountId: mockAccount.id,
-    permissions: ['account:read', 'account:write'],
+    familyId: mockFamily.id,
+    permissions: ['family:read', 'family:write'],
     createdAt: Date.now(),
     updatedAt: Date.now(),
     setCreationTimestamps: jest.fn(),
@@ -72,7 +72,7 @@ describe('MembershipsService', () => {
       return new Date(this.updatedAt);
     },
     user: mockUser,
-    account: mockAccount,
+    family: mockFamily,
   };
 
   beforeEach(async () => {
@@ -82,15 +82,15 @@ describe('MembershipsService', () => {
       update: jest.fn(),
       hardDelete: jest.fn(),
       findByUserId: jest.fn(),
-      findByAccountId: jest.fn(),
-      findByUserAndAccount: jest.fn(),
+      findByFamilyId: jest.fn(),
+      findByUserAndFamily: jest.fn(),
     };
 
     usersRepository = {
       findOne: jest.fn(),
     };
 
-    accountsRepository = {
+    familiesRepository = {
       findOne: jest.fn(),
     };
 
@@ -106,8 +106,8 @@ describe('MembershipsService', () => {
           useValue: usersRepository,
         },
         {
-          provide: 'IAccountsRepository',
-          useValue: accountsRepository,
+          provide: 'IFamiliesRepository',
+          useValue: familiesRepository,
         },
       ],
     }).compile();
@@ -122,14 +122,14 @@ describe('MembershipsService', () => {
   describe('create', () => {
     const createDto: CreateMembershipDto = {
       userId: mockUser.id,
-      accountId: mockAccount.id,
-      permissions: ['account:read', 'account:write'],
+      familyId: mockFamily.id,
+      permissions: ['family:read', 'family:write'],
     };
 
     it('should create a membership successfully', async () => {
       usersRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-      accountsRepository.findOne = jest.fn().mockResolvedValue(mockAccount);
-      membershipsRepository.findByUserAndAccount = jest
+      familiesRepository.findOne = jest.fn().mockResolvedValue(mockFamily);
+      membershipsRepository.findByUserAndFamily = jest
         .fn()
         .mockResolvedValue(null);
       membershipsRepository.create = jest
@@ -141,18 +141,18 @@ describe('MembershipsService', () => {
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         id: createDto.userId,
       });
-      expect(accountsRepository.findOne).toHaveBeenCalledWith({
-        id: createDto.accountId,
+      expect(familiesRepository.findOne).toHaveBeenCalledWith({
+        id: createDto.familyId,
       });
-      expect(membershipsRepository.findByUserAndAccount).toHaveBeenCalledWith(
+      expect(membershipsRepository.findByUserAndFamily).toHaveBeenCalledWith(
         createDto.userId,
-        createDto.accountId,
+        createDto.familyId,
       );
       expect(membershipsRepository.create).toHaveBeenCalledWith(createDto);
       expect(result).toEqual({
         id: mockMembership.id,
         userId: mockMembership.userId,
-        accountId: mockMembership.accountId,
+        familyId: mockMembership.familyId,
         permissions: mockMembership.permissions,
         createdAt: new Date(mockMembership.createdAt).toISOString(),
         updatedAt: new Date(mockMembership.updatedAt).toISOString(),
@@ -160,9 +160,9 @@ describe('MembershipsService', () => {
           id: mockUser.id,
           email: mockUser.email,
         },
-        account: {
-          id: mockAccount.id,
-          name: mockAccount.name,
+        family: {
+          id: mockFamily.id,
+          name: mockFamily.name,
         },
       });
     });
@@ -176,34 +176,34 @@ describe('MembershipsService', () => {
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         id: createDto.userId,
       });
-      expect(accountsRepository.findOne).not.toHaveBeenCalled();
+      expect(familiesRepository.findOne).not.toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException if account not found', async () => {
+    it('should throw BadRequestException if family not found', async () => {
       usersRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-      accountsRepository.findOne = jest.fn().mockResolvedValue(null);
+      familiesRepository.findOne = jest.fn().mockResolvedValue(null);
 
       await expect(service.create(createDto)).rejects.toThrow(
         BadRequestException,
       );
-      expect(accountsRepository.findOne).toHaveBeenCalledWith({
-        id: createDto.accountId,
+      expect(familiesRepository.findOne).toHaveBeenCalledWith({
+        id: createDto.familyId,
       });
     });
 
     it('should throw ConflictException if membership already exists', async () => {
       usersRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-      accountsRepository.findOne = jest.fn().mockResolvedValue(mockAccount);
-      membershipsRepository.findByUserAndAccount = jest
+      familiesRepository.findOne = jest.fn().mockResolvedValue(mockFamily);
+      membershipsRepository.findByUserAndFamily = jest
         .fn()
         .mockResolvedValue(mockMembership);
 
       await expect(service.create(createDto)).rejects.toThrow(
         ConflictException,
       );
-      expect(membershipsRepository.findByUserAndAccount).toHaveBeenCalledWith(
+      expect(membershipsRepository.findByUserAndFamily).toHaveBeenCalledWith(
         createDto.userId,
-        createDto.accountId,
+        createDto.familyId,
       );
     });
   });
@@ -221,7 +221,7 @@ describe('MembershipsService', () => {
       expect(result).toEqual({
         id: mockMembership.id,
         userId: mockMembership.userId,
-        accountId: mockMembership.accountId,
+        familyId: mockMembership.familyId,
         permissions: mockMembership.permissions,
         createdAt: new Date(mockMembership.createdAt).toISOString(),
         updatedAt: new Date(mockMembership.updatedAt).toISOString(),
@@ -229,9 +229,9 @@ describe('MembershipsService', () => {
           id: mockUser.id,
           email: mockUser.email,
         },
-        account: {
-          id: mockAccount.id,
-          name: mockAccount.name,
+        family: {
+          id: mockFamily.id,
+          name: mockFamily.name,
         },
       });
     });
@@ -247,7 +247,7 @@ describe('MembershipsService', () => {
 
   describe('update', () => {
     const updateDto: UpdateMembershipDto = {
-      permissions: ['account:read'],
+      permissions: ['family:read'],
     };
 
     it('should update membership successfully', async () => {
@@ -315,7 +315,7 @@ describe('MembershipsService', () => {
       expect(result).toEqual({
         memberships: [
           {
-            accountId: mockMembership.accountId,
+            familyId: mockMembership.familyId,
             permissions: mockMembership.permissions,
           },
         ],
@@ -333,27 +333,27 @@ describe('MembershipsService', () => {
     });
   });
 
-  describe('findAccountMemberships', () => {
-    it('should return account memberships successfully', async () => {
-      const accountId = '123e4567-e89b-12d3-a456-426614174002';
-      accountsRepository.findOne = jest.fn().mockResolvedValue(mockAccount);
-      membershipsRepository.findByAccountId = jest
+  describe('findFamilyMemberships', () => {
+    it('should return family memberships successfully', async () => {
+      const familyId = '123e4567-e89b-12d3-a456-426614174002';
+      familiesRepository.findOne = jest.fn().mockResolvedValue(mockFamily);
+      membershipsRepository.findByFamilyId = jest
         .fn()
         .mockResolvedValue([mockMembership]);
 
-      const result = await service.findAccountMemberships(accountId);
+      const result = await service.findFamilyMemberships(familyId);
 
-      expect(accountsRepository.findOne).toHaveBeenCalledWith({
-        id: accountId,
+      expect(familiesRepository.findOne).toHaveBeenCalledWith({
+        id: familyId,
       });
-      expect(membershipsRepository.findByAccountId).toHaveBeenCalledWith(
-        accountId,
+      expect(membershipsRepository.findByFamilyId).toHaveBeenCalledWith(
+        familyId,
       );
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
         id: mockMembership.id,
         userId: mockMembership.userId,
-        accountId: mockMembership.accountId,
+        familyId: mockMembership.familyId,
         permissions: mockMembership.permissions,
         createdAt: new Date(mockMembership.createdAt).toISOString(),
         updatedAt: new Date(mockMembership.updatedAt).toISOString(),
@@ -361,21 +361,21 @@ describe('MembershipsService', () => {
           id: mockUser.id,
           email: mockUser.email,
         },
-        account: {
-          id: mockAccount.id,
-          name: mockAccount.name,
+        family: {
+          id: mockFamily.id,
+          name: mockFamily.name,
         },
       });
     });
 
-    it('should throw NotFoundException if account not found', async () => {
-      const accountId = '123e4567-e89b-12d3-a456-426614174002';
-      accountsRepository.findOne = jest.fn().mockResolvedValue(null);
+    it('should throw NotFoundException if family not found', async () => {
+      const familyId = '123e4567-e89b-12d3-a456-426614174002';
+      familiesRepository.findOne = jest.fn().mockResolvedValue(null);
 
-      await expect(service.findAccountMemberships(accountId)).rejects.toThrow(
+      await expect(service.findFamilyMemberships(familyId)).rejects.toThrow(
         NotFoundException,
       );
-      expect(membershipsRepository.findByAccountId).not.toHaveBeenCalled();
+      expect(membershipsRepository.findByFamilyId).not.toHaveBeenCalled();
     });
   });
 });

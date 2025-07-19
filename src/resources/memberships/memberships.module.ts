@@ -2,7 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from '../../common/common.module';
 import { UsersModule } from '../users/users.module';
-import { AccountsModule } from '../accounts/accounts.module';
+import { FamiliesModule } from '../families/families.module';
 import { Membership } from './entities/membership.entity';
 import { MembershipsController } from './memberships.controller';
 import { MembershipsService } from './services/memberships.service';
@@ -13,7 +13,7 @@ import { MembershipsRepository } from './repositories/memberships.repository';
     TypeOrmModule.forFeature([Membership]),
     CommonModule,
     forwardRef(() => UsersModule),
-    forwardRef(() => AccountsModule),
+    forwardRef(() => FamiliesModule),
   ],
   controllers: [MembershipsController],
   providers: [

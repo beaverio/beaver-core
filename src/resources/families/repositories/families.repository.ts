@@ -4,22 +4,22 @@ import { PaginateConfig, PaginationType } from 'nestjs-paginate';
 import { ICacheService } from 'src/common/interfaces';
 import { Repository } from 'typeorm';
 import { BasePaginatedRepository } from '../../../common/repositories/base-paginated.repository';
-import { QueryParamsAccountDto, UpsertAccountDto } from '../dto/account.dto';
-import { Account } from '../entities/account.entity';
-import { IAccountsRepository } from '../interfaces/accounts-repository.interface';
+import { QueryParamsFamilyDto, UpsertFamilyDto } from '../dto/family.dto';
+import { Family } from '../entities/family.entity';
+import { IFamiliesRepository } from '../interfaces/families-repository.interface';
 
 @Injectable()
-export class AccountsRepository
-  extends BasePaginatedRepository<Account>
-  implements IAccountsRepository
+export class FamiliesRepository
+  extends BasePaginatedRepository<Family>
+  implements IFamiliesRepository
 {
-  private readonly logger = new Logger(AccountsRepository.name);
-  private readonly CACHE_PREFIX = 'account:';
+  private readonly logger = new Logger(FamiliesRepository.name);
+  private readonly CACHE_PREFIX = 'family:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
   constructor(
-    @InjectRepository(Account)
-    private readonly repo: Repository<Account>,
+    @InjectRepository(Family)
+    private readonly repo: Repository<Family>,
     @Inject('ICacheService')
     private readonly cacheService: ICacheService,
   ) {
@@ -27,10 +27,10 @@ export class AccountsRepository
   }
 
   /**
-   * Get default offset pagination configuration for Account entity
+   * Get default offset pagination configuration for Family entity
    * Uses offset-based pagination with flexible sorting options
    */
-  protected getDefaultPaginateConfig(): PaginateConfig<Account> {
+  protected getDefaultPaginateConfig(): PaginateConfig<Family> {
     return {
       defaultLimit: 50,
       maxLimit: 100,
@@ -45,47 +45,47 @@ export class AccountsRepository
     };
   }
 
-  async create(dto: UpsertAccountDto): Promise<Account> {
-    const account = this.repo.create(dto);
-    const savedAccount = await this.repo.save(account);
-    await this.cacheEntity(savedAccount);
-    this.logger.debug(`Account created and cached: ${savedAccount.id}`);
-    return savedAccount;
+  async create(dto: UpsertFamilyDto): Promise<Family> {
+    const family = this.repo.create(dto);
+    const savedFamily = await this.repo.save(family);
+    await this.cacheEntity(savedFamily);
+    this.logger.debug(`Family created and cached: ${savedFamily.id}`);
+    return savedFamily;
   }
 
-  async findOne(where: QueryParamsAccountDto): Promise<Account | null> {
+  async findOne(where: QueryParamsFamilyDto): Promise<Family | null> {
     if (where.id) {
       const cached = await this.getCachedEntity(where.id);
       if (cached) {
-        this.logger.debug(`Cache hit for account: ${where.id}`);
+        this.logger.debug(`Cache hit for family: ${where.id}`);
         return cached;
       }
     }
 
-    const account = await this.repo.findOne({
+    const family = await this.repo.findOne({
       where,
       relations: ['memberships'],
     });
 
-    if (account) {
-      await this.cacheEntity(account);
+    if (family) {
+      await this.cacheEntity(family);
     }
 
-    return account;
+    return family;
   }
 
-  async update(id: string, dto: UpsertAccountDto): Promise<Account> {
+  async update(id: string, dto: UpsertFamilyDto): Promise<Family> {
     await this.repo.update(id, dto);
-    const account = await this.repo.findOne({
+    const family = await this.repo.findOne({
       where: { id },
       relations: ['memberships'],
     });
 
-    if (account) {
-      await this.cacheEntity(account);
+    if (family) {
+      await this.cacheEntity(family);
     }
 
-    return account!;
+    return family!;
   }
 
   async hardDelete(id: string): Promise<void> {
@@ -93,14 +93,14 @@ export class AccountsRepository
     await this.repo.delete(id);
   }
 
-  async cacheEntity(entity: Account): Promise<void> {
+  async cacheEntity(entity: Family): Promise<void> {
     const key = `${this.CACHE_PREFIX}${entity.id}`;
     await this.cacheService.set(key, entity, this.CACHE_TTL);
   }
 
-  async getCachedEntity(id: string): Promise<Account | null> {
+  async getCachedEntity(id: string): Promise<Family | null> {
     const key = `${this.CACHE_PREFIX}${id}`;
-    return await this.cacheService.get<Account>(key);
+    return await this.cacheService.get<Family>(key);
   }
 
   async invalidateEntity(id: string): Promise<void> {
@@ -108,7 +108,7 @@ export class AccountsRepository
     await this.cacheService.delete(key);
   }
 
-  async invalidateCache(entity: Account): Promise<void> {
+  async invalidateCache(entity: Family): Promise<void> {
     await this.invalidateEntity(entity.id);
   }
 

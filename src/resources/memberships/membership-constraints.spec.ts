@@ -5,7 +5,7 @@ import { MembershipsService } from './services/memberships.service';
 import { MembershipsRepository } from './repositories/memberships.repository';
 import { IMembershipsRepository } from './interfaces/memberships-repository.interface';
 import { IUsersRepository } from '../users/interfaces/users-repository.interface';
-import { IAccountsRepository } from '../accounts/interfaces/accounts-repository.interface';
+import { IFamiliesRepository } from '../families/interfaces/families-repository.interface';
 import { Membership } from './entities/membership.entity';
 import { CreateMembershipDto } from './dto/membership.dto';
 
@@ -13,16 +13,16 @@ describe('Membership Entity Constraints', () => {
   let service: MembershipsService;
   let membershipsRepository: IMembershipsRepository;
   let usersRepository: Partial<IUsersRepository>;
-  let accountsRepository: Partial<IAccountsRepository>;
+  let familiesRepository: Partial<IFamiliesRepository>;
 
   const mockUser = {
     id: '123e4567-e89b-12d3-a456-426614174001',
     email: 'test@example.com',
   };
 
-  const mockAccount = {
+  const mockFamily = {
     id: '123e4567-e89b-12d3-a456-426614174002',
-    name: 'Test Account',
+    name: 'Test family',
   };
 
   beforeEach(async () => {
@@ -30,7 +30,7 @@ describe('Membership Entity Constraints', () => {
       findOne: jest.fn(),
     };
 
-    accountsRepository = {
+    familiesRepository = {
       findOne: jest.fn(),
     };
 
@@ -66,8 +66,8 @@ describe('Membership Entity Constraints', () => {
           useValue: usersRepository,
         },
         {
-          provide: 'IAccountsRepository',
-          useValue: accountsRepository,
+          provide: 'IFamiliesRepository',
+          useValue: familiesRepository,
         },
       ],
     }).compile();
@@ -79,58 +79,58 @@ describe('Membership Entity Constraints', () => {
   });
 
   describe('Unique Constraint Validation', () => {
-    it('should prevent duplicate memberships for same user and account', async () => {
+    it('should prevent duplicate memberships for same user and family', async () => {
       const createDto: CreateMembershipDto = {
         userId: mockUser.id,
-        accountId: mockAccount.id,
-        permissions: ['account:read'],
+        familyId: mockFamily.id,
+        permissions: ['family:read'],
       };
 
-      // Mock successful user and account lookup
+      // Mock successful user and family lookup
       usersRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-      accountsRepository.findOne = jest.fn().mockResolvedValue(mockAccount);
+      familiesRepository.findOne = jest.fn().mockResolvedValue(mockFamily);
 
       // Mock that membership already exists
-      membershipsRepository.findByUserAndAccount = jest.fn().mockResolvedValue({
+      membershipsRepository.findByUserAndFamily = jest.fn().mockResolvedValue({
         id: 'existing-membership-id',
         userId: mockUser.id,
-        accountId: mockAccount.id,
-        permissions: ['account:read'],
+        familyId: mockFamily.id,
+        permissions: ['family:read'],
       });
 
       await expect(service.create(createDto)).rejects.toThrow(
         ConflictException,
       );
-      expect(membershipsRepository.findByUserAndAccount).toHaveBeenCalledWith(
+      expect(membershipsRepository.findByUserAndFamily).toHaveBeenCalledWith(
         mockUser.id,
-        mockAccount.id,
+        mockFamily.id,
       );
     });
 
     it('should allow membership creation when no duplicate exists', async () => {
       const createDto: CreateMembershipDto = {
         userId: mockUser.id,
-        accountId: mockAccount.id,
-        permissions: ['account:read'],
+        familyId: mockFamily.id,
+        permissions: ['family:read'],
       };
 
       const expectedMembership = {
         id: 'new-membership-id',
         userId: mockUser.id,
-        accountId: mockAccount.id,
-        permissions: ['account:read'],
+        familyId: mockFamily.id,
+        permissions: ['family:read'],
         createdAt: Date.now(),
         updatedAt: Date.now(),
         user: mockUser,
-        account: mockAccount,
+        family: mockFamily,
       };
 
-      // Mock successful user and account lookup
+      // Mock successful user and family lookup
       usersRepository.findOne = jest.fn().mockResolvedValue(mockUser);
-      accountsRepository.findOne = jest.fn().mockResolvedValue(mockAccount);
+      familiesRepository.findOne = jest.fn().mockResolvedValue(mockFamily);
 
       // Mock no existing membership
-      membershipsRepository.findByUserAndAccount = jest
+      membershipsRepository.findByUserAndFamily = jest
         .fn()
         .mockResolvedValue(null);
       membershipsRepository.create = jest
@@ -141,7 +141,7 @@ describe('Membership Entity Constraints', () => {
 
       expect(result.id).toBe('new-membership-id');
       expect(result.userId).toBe(mockUser.id);
-      expect(result.accountId).toBe(mockAccount.id);
+      expect(result.familyId).toBe(mockFamily.id);
     });
   });
 
@@ -154,13 +154,13 @@ describe('Membership Entity Constraints', () => {
       //    - All Membership records with that userId are automatically deleted
       //    - This is handled by the database with ON DELETE CASCADE
 
-      // 2. When Account is deleted:
-      //    - All Membership records with that accountId are automatically deleted
+      // 2. When family is deleted:
+      //    - All Membership records with that familyId are automatically deleted
       //    - This is handled by the database with ON DELETE CASCADE
 
       // 3. When Membership is deleted:
       //    - Only the membership record is removed
-      //    - User and Account records remain intact
+      //    - User and family records remain intact
 
       const entityDefinitions = {
         user: {
@@ -168,21 +168,21 @@ describe('Membership Entity Constraints', () => {
           cascade: 'onDelete: CASCADE',
           foreignKey: 'userId',
         },
-        account: {
+        family: {
           relationship: 'OneToMany',
           cascade: 'onDelete: CASCADE',
-          foreignKey: 'accountId',
+          foreignKey: 'familyId',
         },
         membership: {
-          uniqueConstraint: ['userId', 'accountId'],
+          uniqueConstraint: ['userId', 'familyId'],
         },
       };
 
       expect(entityDefinitions.user.cascade).toBe('onDelete: CASCADE');
-      expect(entityDefinitions.account.cascade).toBe('onDelete: CASCADE');
+      expect(entityDefinitions.family.cascade).toBe('onDelete: CASCADE');
       expect(entityDefinitions.membership.uniqueConstraint).toEqual([
         'userId',
-        'accountId',
+        'familyId',
       ]);
     });
   });
@@ -194,16 +194,16 @@ describe('Membership Entity Constraints', () => {
         {
           id: 'membership1',
           userId,
-          accountId: 'account1',
-          permissions: ['account:read'],
-          account: { id: 'account1', name: 'Account 1' },
+          familyId: 'family1',
+          permissions: ['family:read'],
+          family: { id: 'family1', name: 'family 1' },
         },
         {
           id: 'membership2',
           userId,
-          accountId: 'account2',
-          permissions: ['account:write'],
-          account: { id: 'account2', name: 'Account 2' },
+          familyId: 'family2',
+          permissions: ['family:write'],
+          family: { id: 'family2', name: 'family 2' },
         },
       ];
 
@@ -215,42 +215,42 @@ describe('Membership Entity Constraints', () => {
       const result = await service.findUserMemberships(userId);
 
       expect(result.memberships).toHaveLength(2);
-      expect(result.memberships[0].accountId).toBe('account1');
-      expect(result.memberships[1].accountId).toBe('account2');
+      expect(result.memberships[0].familyId).toBe('family1');
+      expect(result.memberships[1].familyId).toBe('family2');
       expect(membershipsRepository.findByUserId).toHaveBeenCalledWith(userId);
     });
 
-    it('should support loading account.memberships relationship', async () => {
-      const accountId = mockAccount.id;
+    it('should support loading family.memberships relationship', async () => {
+      const familyId = mockFamily.id;
       const mockMemberships = [
         {
           id: 'membership1',
           userId: 'user1',
-          accountId,
-          permissions: ['account:read'],
+          familyId,
+          permissions: ['family:read'],
           user: { id: 'user1', email: 'user1@example.com' },
         },
         {
           id: 'membership2',
           userId: 'user2',
-          accountId,
-          permissions: ['account:write'],
+          familyId,
+          permissions: ['family:write'],
           user: { id: 'user2', email: 'user2@example.com' },
         },
       ];
 
-      accountsRepository.findOne = jest.fn().mockResolvedValue(mockAccount);
-      membershipsRepository.findByAccountId = jest
+      familiesRepository.findOne = jest.fn().mockResolvedValue(mockFamily);
+      membershipsRepository.findByFamilyId = jest
         .fn()
         .mockResolvedValue(mockMemberships);
 
-      const result = await service.findAccountMemberships(accountId);
+      const result = await service.findFamilyMemberships(familyId);
 
       expect(result).toHaveLength(2);
       expect(result[0].userId).toBe('user1');
       expect(result[1].userId).toBe('user2');
-      expect(membershipsRepository.findByAccountId).toHaveBeenCalledWith(
-        accountId,
+      expect(membershipsRepository.findByFamilyId).toHaveBeenCalledWith(
+        familyId,
       );
     });
   });

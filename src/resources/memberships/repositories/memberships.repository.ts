@@ -4,7 +4,7 @@ import { PaginateConfig, PaginationType } from 'nestjs-paginate';
 import { Repository } from 'typeorm';
 import { ICacheService } from '../../../common/interfaces/cache-service.interface';
 import { BasePaginatedRepository } from '../../../common/repositories/base-paginated.repository';
-import { IAccountsRepository } from '../../accounts/interfaces/accounts-repository.interface';
+import { IFamiliesRepository } from '../../families/interfaces/families-repository.interface';
 import { IUsersRepository } from '../../users/interfaces/users-repository.interface';
 import {
   CreateMembershipDto,
@@ -30,8 +30,8 @@ export class MembershipsRepository
     private readonly cacheService: ICacheService,
     @Inject('IUsersRepository')
     private readonly usersRepository: IUsersRepository,
-    @Inject('IAccountsRepository')
-    private readonly accountsRepository: IAccountsRepository,
+    @Inject('IFamiliesRepository')
+    private readonly familiesRepository: IFamiliesRepository,
   ) {
     super(repo);
   }
@@ -47,12 +47,12 @@ export class MembershipsRepository
       defaultSortBy: [['createdAt', 'DESC']],
       filterableColumns: {
         userId: true,
-        accountId: true,
+        familyId: true,
         id: true,
       },
       loadEagerRelations: false,
       paginationType: PaginationType.LIMIT_AND_OFFSET,
-      relations: ['user', 'account'],
+      relations: ['user', 'family'],
     };
   }
 
@@ -61,10 +61,10 @@ export class MembershipsRepository
     const savedMembership = await this.repo.save(membership);
     await this.cacheEntity(savedMembership);
     await this.invalidateUserMembershipsCache(dto.userId);
-    await this.invalidateAccountMembershipsCache(dto.accountId);
-    // Invalidate user and account entity caches since their memberships relationship changed
+    await this.invalidateFamilyMembershipsCache(dto.familyId);
+    // Invalidate user and family entity caches since their memberships relationship changed
     await this.invalidateUserEntityCache(dto.userId);
-    await this.invalidateAccountEntityCache(dto.accountId);
+    await this.invalidateFamilyEntityCache(dto.familyId);
     this.logger.debug(`Membership created and cached: ${savedMembership.id}`);
     return savedMembership;
   }
@@ -80,7 +80,7 @@ export class MembershipsRepository
 
     const membership = await this.repo.findOne({
       where,
-      relations: ['user', 'account'],
+      relations: ['user', 'family'],
     });
 
     if (membership) {
@@ -94,16 +94,16 @@ export class MembershipsRepository
     await this.repo.update(id, dto);
     const membership = await this.repo.findOne({
       where: { id },
-      relations: ['user', 'account'],
+      relations: ['user', 'family'],
     });
 
     if (membership) {
       await this.cacheEntity(membership);
       await this.invalidateUserMembershipsCache(membership.userId);
-      await this.invalidateAccountMembershipsCache(membership.accountId);
-      // Invalidate user and account entity caches since their memberships relationship changed
+      await this.invalidateFamilyMembershipsCache(membership.familyId);
+      // Invalidate user and family entity caches since their memberships relationship changed
       await this.invalidateUserEntityCache(membership.userId);
-      await this.invalidateAccountEntityCache(membership.accountId);
+      await this.invalidateFamilyEntityCache(membership.familyId);
     }
 
     return membership!;
@@ -114,10 +114,10 @@ export class MembershipsRepository
     if (membership) {
       await this.invalidateEntity(id);
       await this.invalidateUserMembershipsCache(membership.userId);
-      await this.invalidateAccountMembershipsCache(membership.accountId);
-      // Invalidate user and account entity caches since their memberships relationship changed
+      await this.invalidateFamilyMembershipsCache(membership.familyId);
+      // Invalidate user and family entity caches since their memberships relationship changed
       await this.invalidateUserEntityCache(membership.userId);
-      await this.invalidateAccountEntityCache(membership.accountId);
+      await this.invalidateFamilyEntityCache(membership.familyId);
     }
     await this.repo.delete(id);
   }
@@ -133,24 +133,24 @@ export class MembershipsRepository
 
     const memberships = await this.repo.find({
       where: { userId },
-      relations: ['account'],
+      relations: ['family'],
     });
 
     await this.cacheService.set(cacheKey, memberships, this.CACHE_TTL);
     return memberships;
   }
 
-  async findByAccountId(accountId: string): Promise<Membership[]> {
-    const cacheKey = `${this.CACHE_PREFIX}account:${accountId}:memberships`;
+  async findByFamilyId(familyId: string): Promise<Membership[]> {
+    const cacheKey = `${this.CACHE_PREFIX}family:${familyId}:memberships`;
     const cached = await this.cacheService.get<Membership[]>(cacheKey);
 
     if (cached) {
-      this.logger.debug(`Cache hit for account memberships: ${accountId}`);
+      this.logger.debug(`Cache hit for family memberships: ${familyId}`);
       return cached;
     }
 
     const memberships = await this.repo.find({
-      where: { accountId },
+      where: { familyId },
       relations: ['user'],
     });
 
@@ -158,13 +158,13 @@ export class MembershipsRepository
     return memberships;
   }
 
-  async findByUserAndAccount(
+  async findByUserAndFamily(
     userId: string,
-    accountId: string,
+    familyId: string,
   ): Promise<Membership | null> {
     return await this.repo.findOne({
-      where: { userId, accountId },
-      relations: ['user', 'account'],
+      where: { userId, familyId },
+      relations: ['user', 'family'],
     });
   }
 
@@ -186,10 +186,10 @@ export class MembershipsRepository
   async invalidateCache(entity: Membership): Promise<void> {
     await this.invalidateEntity(entity.id);
     await this.invalidateUserMembershipsCache(entity.userId);
-    await this.invalidateAccountMembershipsCache(entity.accountId);
-    // Invalidate user and account entity caches since their memberships relationship changed
+    await this.invalidateFamilyMembershipsCache(entity.familyId);
+    // Invalidate user and family entity caches since their memberships relationship changed
     await this.invalidateUserEntityCache(entity.userId);
-    await this.invalidateAccountEntityCache(entity.accountId);
+    await this.invalidateFamilyEntityCache(entity.familyId);
   }
 
   private async invalidateUserMembershipsCache(userId: string): Promise<void> {
@@ -197,10 +197,10 @@ export class MembershipsRepository
     await this.cacheService.delete(key);
   }
 
-  private async invalidateAccountMembershipsCache(
-    accountId: string,
+  private async invalidateFamilyMembershipsCache(
+    familyId: string,
   ): Promise<void> {
-    const key = `${this.CACHE_PREFIX}account:${accountId}:memberships`;
+    const key = `${this.CACHE_PREFIX}family:${familyId}:memberships`;
     await this.cacheService.delete(key);
   }
 
@@ -209,10 +209,9 @@ export class MembershipsRepository
     await this.cacheService.delete(userCacheKey);
   }
 
-  private async invalidateAccountEntityCache(accountId: string): Promise<void> {
-    const accountCacheKey =
-      this.accountsRepository.getEntityCacheKey(accountId);
-    await this.cacheService.delete(accountCacheKey);
+  private async invalidateFamilyEntityCache(familyId: string): Promise<void> {
+    const familyCacheKey = this.familiesRepository.getEntityCacheKey(familyId);
+    await this.cacheService.delete(familyCacheKey);
   }
 
   getCacheKey(field: string, value: string): string {

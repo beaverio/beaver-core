@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { IUsersRepository } from '../../users/interfaces/users-repository.interface';
-import { IAccountsRepository } from '../../accounts/interfaces/accounts-repository.interface';
+import { IFamiliesRepository } from '../../families/interfaces/families-repository.interface';
 import {
   CreateMembershipDto,
   MembershipResponseDto,
@@ -27,8 +27,8 @@ export class MembershipsService implements IMembershipsService {
     private readonly membershipsRepository: IMembershipsRepository,
     @Inject('IUsersRepository')
     private readonly usersRepository: IUsersRepository,
-    @Inject('IAccountsRepository')
-    private readonly accountsRepository: IAccountsRepository,
+    @Inject('IFamiliesRepository')
+    private readonly familiesRepository: IFamiliesRepository,
   ) {}
 
   async create(dto: CreateMembershipDto): Promise<MembershipResponseDto> {
@@ -38,23 +38,23 @@ export class MembershipsService implements IMembershipsService {
       throw new BadRequestException('User not found');
     }
 
-    // Validate that account exists
-    const account = await this.accountsRepository.findOne({
-      id: dto.accountId,
+    // Validate that family exists
+    const family = await this.familiesRepository.findOne({
+      id: dto.familyId,
     });
-    if (!account) {
-      throw new BadRequestException('Account not found');
+    if (!family) {
+      throw new BadRequestException('Family not found');
     }
 
     // Check if membership already exists
     const existingMembership =
-      await this.membershipsRepository.findByUserAndAccount(
+      await this.membershipsRepository.findByUserAndFamily(
         dto.userId,
-        dto.accountId,
+        dto.familyId,
       );
     if (existingMembership) {
       throw new ConflictException(
-        'Membership already exists for this user and account',
+        'Membership already exists for this user and family',
       );
     }
 
@@ -106,7 +106,7 @@ export class MembershipsService implements IMembershipsService {
 
     const membershipItems: MembershipItemDto[] = memberships.map(
       (membership) => ({
-        accountId: membership.accountId,
+        familyId: membership.familyId,
         permissions: membership.permissions,
       }),
     );
@@ -116,17 +116,17 @@ export class MembershipsService implements IMembershipsService {
     };
   }
 
-  async findAccountMemberships(
-    accountId: string,
+  async findFamilyMemberships(
+    familyId: string,
   ): Promise<MembershipResponseDto[]> {
-    // Validate that account exists
-    const account = await this.accountsRepository.findOne({ id: accountId });
-    if (!account) {
-      throw new NotFoundException('Account not found');
+    // Validate that family exists
+    const family = await this.familiesRepository.findOne({ id: familyId });
+    if (!family) {
+      throw new NotFoundException('Family not found');
     }
 
     const memberships =
-      await this.membershipsRepository.findByAccountId(accountId);
+      await this.membershipsRepository.findByFamilyId(familyId);
 
     return MembershipResponseDto.fromEntities(memberships);
   }

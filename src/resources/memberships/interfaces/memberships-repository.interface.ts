@@ -15,9 +15,9 @@ export interface IMembershipsRepository
   update(id: string, dto: UpdateMembershipDto): Promise<Membership>;
   hardDelete(id: string): Promise<void>;
   findByUserId(userId: string): Promise<Membership[]>;
-  findByAccountId(accountId: string): Promise<Membership[]>;
-  findByUserAndAccount(
+  findByFamilyId(familyId: string): Promise<Membership[]>;
+  findByUserAndFamily(
     userId: string,
-    accountId: string,
+    familyId: string,
   ): Promise<Membership | null>;
 }

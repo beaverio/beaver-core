@@ -15,17 +15,17 @@ describe('MembershipsController', () => {
   const mockMembershipResponse: MembershipResponseDto = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     userId: '123e4567-e89b-12d3-a456-426614174001',
-    accountId: '123e4567-e89b-12d3-a456-426614174002',
-    permissions: ['account:read', 'account:write'],
+    familyId: '123e4567-e89b-12d3-a456-426614174002',
+    permissions: ['family:read', 'family:write'],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     user: {
       id: '123e4567-e89b-12d3-a456-426614174001',
       email: 'test@example.com',
     },
-    account: {
+    family: {
       id: '123e4567-e89b-12d3-a456-426614174002',
-      name: 'Test Account',
+      name: 'Test Family',
     },
   };
 
@@ -61,8 +61,8 @@ describe('MembershipsController', () => {
     it('should create a membership', async () => {
       const createDto: CreateMembershipDto = {
         userId: '123e4567-e89b-12d3-a456-426614174001',
-        accountId: '123e4567-e89b-12d3-a456-426614174002',
-        permissions: ['account:read', 'account:write'],
+        familyId: '123e4567-e89b-12d3-a456-426614174002',
+        permissions: ['family:read', 'family:write'],
       };
 
       service.create = jest.fn().mockResolvedValue(mockMembershipResponse);
@@ -90,7 +90,7 @@ describe('MembershipsController', () => {
     it('should update a membership', async () => {
       const id = '123e4567-e89b-12d3-a456-426614174000';
       const updateDto: UpdateMembershipDto = {
-        permissions: ['account:read'],
+        permissions: ['family:read'],
       };
 
       service.update = jest.fn().mockResolvedValue(mockMembershipResponse);

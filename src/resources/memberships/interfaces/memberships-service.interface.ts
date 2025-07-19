@@ -11,5 +11,5 @@ export interface IMembershipsService {
   update(id: string, dto: UpdateMembershipDto): Promise<MembershipResponseDto>;
   delete(id: string): Promise<void>;
   findUserMemberships(userId: string): Promise<UserMembershipsResponseDto>;
-  findAccountMemberships(accountId: string): Promise<MembershipResponseDto[]>;
+  findFamilyMemberships(familyId: string): Promise<MembershipResponseDto[]>;
 }

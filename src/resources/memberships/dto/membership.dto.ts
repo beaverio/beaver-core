@@ -15,7 +15,7 @@ export class BaseMembershipDto extends BaseDto {
   userId: string;
 
   @IsUUID()
-  accountId: string;
+  familyId: string;
 
   @IsArray()
   @ArrayNotEmpty()
@@ -25,7 +25,7 @@ export class BaseMembershipDto extends BaseDto {
 
 export class CreateMembershipDto extends PickType(BaseMembershipDto, [
   'userId',
-  'accountId',
+  'familyId',
   'permissions',
 ] as const) {}
 
@@ -37,7 +37,7 @@ export class UpdateMembershipDto extends CreateUpdateDto(
 export class MembershipResponseDto extends PickType(BaseMembershipDto, [
   'id',
   'userId',
-  'accountId',
+  'familyId',
   'permissions',
   'createdAt',
   'updatedAt',
@@ -51,7 +51,7 @@ export class MembershipResponseDto extends PickType(BaseMembershipDto, [
 
   @Type(() => Object)
   @IsOptional()
-  account?: {
+  family?: {
     id: string;
     name: string;
   };
@@ -60,7 +60,7 @@ export class MembershipResponseDto extends PickType(BaseMembershipDto, [
     const dto = new MembershipResponseDto();
     dto.id = membership.id;
     dto.userId = membership.userId;
-    dto.accountId = membership.accountId;
+    dto.familyId = membership.familyId;
     dto.permissions = membership.permissions;
 
     // Convert Unix timestamp (number) to ISO string for API response
@@ -87,11 +87,11 @@ export class MembershipResponseDto extends PickType(BaseMembershipDto, [
       };
     }
 
-    // Include related account data if available
-    if (membership.account) {
-      dto.account = {
-        id: membership.account.id,
-        name: membership.account.name,
+    // Include related family data if available
+    if (membership.family) {
+      dto.family = {
+        id: membership.family.id,
+        name: membership.family.name,
       };
     }
 
@@ -110,7 +110,7 @@ export class UserMembershipsResponseDto {
 }
 
 export class MembershipItemDto {
-  accountId: string;
+  familyId: string;
   permissions: string[];
 }
 
@@ -125,5 +125,5 @@ export class QueryParamsMembershipDto {
 
   @IsOptional()
   @IsUUID()
-  accountId?: string;
+  familyId?: string;
 }
