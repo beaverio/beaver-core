@@ -19,6 +19,6 @@ import { CommonModule } from '../../common/common.module';
       useClass: UsersRepository,
     },
   ],
-  exports: ['IUserService'],
+  exports: ['IUserService', 'IUsersRepository'],
 })
 export class UsersModule {}

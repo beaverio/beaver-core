@@ -19,5 +19,6 @@ import { AccountsService } from './services/accounts.service';
       useClass: AccountsService,
     },
   ],
+  exports: ['IAccountsRepository'],
 })
 export class AccountsModule {}
