@@ -199,7 +199,9 @@ describe('AccountsController', () => {
           userId: 'user-id-1',
           accountId: 'test-account-id',
           permissions: ['account:read', 'account:write'],
+          // @ts-expect-error
           createdAt: new Date().toISOString(),
+          // @ts-expect-error
           updatedAt: new Date().toISOString(),
           user: {
             id: 'user-id-1',

@@ -15,7 +15,7 @@ export class UsersService implements IUserService {
   constructor(
     @Inject('IUsersRepository')
     private readonly userRepository: IUsersRepository,
-  ) {}
+  ) { }
 
   async createUser(dto: CreateUserDto): Promise<User> {
     return this.userRepository.create({
@@ -29,7 +29,7 @@ export class UsersService implements IUserService {
   }
 
   async getUser(query: QueryParamsUserDto): Promise<User> {
-    const user = await this.userRepository.findOne(query, ['memberships']);
+    const user = await this.userRepository.findOne(query);
 
     if (!user) {
       throw new NotFoundException('User not found');

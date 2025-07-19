@@ -10,7 +10,7 @@ export class AccountsService implements IAccountsService {
   constructor(
     @Inject('IAccountsRepository')
     private readonly accountsRepository: IAccountsRepository,
-  ) {}
+  ) { }
 
   async createAccount(dto: UpsertAccountDto): Promise<Account> {
     return this.accountsRepository.create(dto);
@@ -21,9 +21,7 @@ export class AccountsService implements IAccountsService {
   }
 
   async getAccount(query: QueryParamsAccountDto): Promise<Account> {
-    const account = await this.accountsRepository.findOne(query, [
-      'memberships',
-    ]);
+    const account = await this.accountsRepository.findOne(query);
 
     if (!account) {
       throw new NotFoundException('Account not found');

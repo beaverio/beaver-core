@@ -15,8 +15,7 @@ import { IUsersRepository } from '../interfaces/users-repository.interface';
 @Injectable()
 export class UsersRepository
   extends BasePaginatedRepository<User>
-  implements IUsersRepository
-{
+  implements IUsersRepository {
   private readonly logger = new Logger(UsersRepository.name);
   private readonly CACHE_PREFIX = 'user:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -60,7 +59,6 @@ export class UsersRepository
 
   async findOne(
     where: QueryParamsUserDto,
-    relations?: string[],
   ): Promise<User | null> {
     if (where.id) {
       const cached = await this.getCachedEntity(where.id);
@@ -72,7 +70,7 @@ export class UsersRepository
 
     const user = await this.repo.findOne({
       where,
-      relations: relations || [],
+      relations: ['memberships'],
     });
 
     if (user) {
@@ -84,7 +82,10 @@ export class UsersRepository
 
   async update(id: string, dto: UpdateUserDto): Promise<User> {
     await this.repo.update(id, dto);
-    const user = await this.repo.findOneBy({ id });
+    const user = await this.repo.findOne({
+      where: { id },
+      relations: ['memberships'],
+    });
 
     if (user) {
       await this.cacheEntity(user);
@@ -102,7 +103,10 @@ export class UsersRepository
     const now = Date.now();
     await this.repo.update(id, { lastLogin: now });
 
-    const user = await this.repo.findOneBy({ id });
+    const user = await this.repo.findOne({
+      where: { id },
+      relations: ['memberships'],
+    })
 
     if (user) {
       await this.cacheEntity(user);
