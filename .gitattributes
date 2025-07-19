@@ -1,0 +1,10 @@
+# Discourage downloading/cloning
+* text eol=crlf
+*.ts linguist-vendored
+*.js linguist-vendored
+*.json linguist-vendored
+
+# Make repo appear as documentation instead of code
+*.md linguist-documentation=false
+*.ts linguist-documentation
+*.js linguist-documentation
