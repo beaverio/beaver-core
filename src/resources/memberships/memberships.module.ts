@@ -1,14 +1,10 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from '../../common/common.module';
 import { UsersModule } from '../users/users.module';
 import { AccountsModule } from '../accounts/accounts.module';
 import { Membership } from './entities/membership.entity';
-import {
-  MembershipsController,
-  UserMembershipsController,
-  AccountMembershipsController,
-} from './memberships.controller';
+import { MembershipsController } from './memberships.controller';
 import { MembershipsService } from './services/memberships.service';
 import { MembershipsRepository } from './repositories/memberships.repository';
 
@@ -16,14 +12,10 @@ import { MembershipsRepository } from './repositories/memberships.repository';
   imports: [
     TypeOrmModule.forFeature([Membership]),
     CommonModule,
-    UsersModule,
-    AccountsModule,
+    forwardRef(() => UsersModule),
+    forwardRef(() => AccountsModule),
   ],
-  controllers: [
-    MembershipsController,
-    UserMembershipsController,
-    AccountMembershipsController,
-  ],
+  controllers: [MembershipsController],
   providers: [
     {
       provide: 'IMembershipsService',

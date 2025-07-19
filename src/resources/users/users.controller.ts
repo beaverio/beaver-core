@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Patch,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,8 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
 import { User } from './entities/user.entity';
 import { IUserService } from './interfaces/users-service.interface';
+import { IMembershipsService } from '../memberships/interfaces/memberships-service.interface';
+import { UserMembershipsResponseDto } from '../memberships/dto/membership.dto';
 
 @UseGuards(JWTAuthGuard)
 @Controller('users')
@@ -22,6 +25,8 @@ export class UsersController {
   constructor(
     @Inject('IUserService')
     private readonly usersService: IUserService,
+    @Inject('IMembershipsService')
+    private readonly membershipsService: IMembershipsService,
   ) {}
 
   @Get()
@@ -55,5 +60,12 @@ export class UsersController {
   ): Promise<UserResponseDto> {
     const updatedUser = await this.usersService.updateUser(user.id, dto);
     return UserResponseDto.fromEntity(updatedUser);
+  }
+
+  @Get(':userId/memberships')
+  async getUserMemberships(
+    @Param('userId') userId: string,
+  ): Promise<UserMembershipsResponseDto> {
+    return this.membershipsService.findUserMemberships(userId);
   }
 }

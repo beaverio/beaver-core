@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Paginated, PaginateQuery } from 'nestjs-paginate';
 import { AccountsController } from './accounts.controller';
 import { Account } from './entities/account.entity';
+import { MembershipResponseDto } from '../memberships/dto/membership.dto';
 
 describe('AccountsController', () => {
   let controller: AccountsController;
@@ -66,6 +67,10 @@ describe('AccountsController', () => {
     deleteAccount: jest.fn(),
   };
 
+  const mockMembershipsService = {
+    findAccountMemberships: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AccountsController],
@@ -73,6 +78,10 @@ describe('AccountsController', () => {
         {
           provide: 'IAccountsService',
           useValue: mockAccountsService,
+        },
+        {
+          provide: 'IMembershipsService',
+          useValue: mockMembershipsService,
         },
       ],
     }).compile();
@@ -178,6 +187,37 @@ describe('AccountsController', () => {
 
       expect(mockAccountsService.deleteAccount).toHaveBeenCalledWith(accountId);
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getAccountMemberships', () => {
+    it('should return account memberships', async () => {
+      const accountId = 'test-account-id';
+      const mockMemberships: MembershipResponseDto[] = [
+        {
+          id: 'membership-id-1',
+          userId: 'user-id-1',
+          accountId: 'test-account-id',
+          permissions: ['account:read', 'account:write'],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          user: {
+            id: 'user-id-1',
+            email: 'user1@example.com',
+          },
+          account: {
+            id: 'test-account-id',
+            name: 'Test Account',
+          },
+        },
+      ];
+
+      mockMembershipsService.findAccountMemberships.mockResolvedValue(mockMemberships);
+
+      const result = await controller.getAccountMemberships(accountId);
+
+      expect(mockMembershipsService.findAccountMemberships).toHaveBeenCalledWith(accountId);
+      expect(result).toEqual(mockMemberships);
     });
   });
 });

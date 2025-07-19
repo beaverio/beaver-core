@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Paginated, PaginateQuery } from 'nestjs-paginate';
 import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
+import { UserMembershipsResponseDto } from '../memberships/dto/membership.dto';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -67,6 +68,10 @@ describe('UsersController', () => {
     updateLastLogin: jest.fn(),
   };
 
+  const mockMembershipsService = {
+    findUserMemberships: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
@@ -74,6 +79,10 @@ describe('UsersController', () => {
         {
           provide: 'IUserService',
           useValue: mockUserService,
+        },
+        {
+          provide: 'IMembershipsService',
+          useValue: mockMembershipsService,
         },
       ],
     }).compile();
@@ -238,6 +247,31 @@ describe('UsersController', () => {
 
       expect(mockUserService.deleteUser).toHaveBeenCalledWith(mockUser.id);
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getUserMemberships', () => {
+    it('should return user memberships', async () => {
+      const userId = 'test-user-id';
+      const mockUserMembershipsResponse: UserMembershipsResponseDto = {
+        memberships: [
+          {
+            accountId: 'account-id-1',
+            permissions: ['account:read', 'account:write'],
+          },
+          {
+            accountId: 'account-id-2',
+            permissions: ['account:read'],
+          },
+        ],
+      };
+
+      mockMembershipsService.findUserMemberships.mockResolvedValue(mockUserMembershipsResponse);
+
+      const result = await controller.getUserMemberships(userId);
+
+      expect(mockMembershipsService.findUserMemberships).toHaveBeenCalledWith(userId);
+      expect(result).toEqual(mockUserMembershipsResponse);
     });
   });
 });

@@ -1,16 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JWTAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import {
-  MembershipsController,
-  UserMembershipsController,
-  AccountMembershipsController,
-} from './memberships.controller';
+import { MembershipsController } from './memberships.controller';
 import { IMembershipsService } from './interfaces/memberships-service.interface';
 import {
   CreateMembershipDto,
   UpdateMembershipDto,
   MembershipResponseDto,
-  UserMembershipsResponseDto,
 } from './dto/membership.dto';
 
 describe('MembershipsController', () => {
@@ -41,8 +36,6 @@ describe('MembershipsController', () => {
       update: jest.fn(),
       delete: jest.fn(),
       findAll: jest.fn(),
-      findUserMemberships: jest.fn(),
-      findAccountMemberships: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -143,116 +136,6 @@ describe('MembershipsController', () => {
       await controller.delete(id);
 
       expect(service.delete).toHaveBeenCalledWith(id);
-    });
-  });
-});
-
-describe('UserMembershipsController', () => {
-  let controller: UserMembershipsController;
-  let service: Partial<IMembershipsService>;
-
-  const mockUserMembershipsResponse: UserMembershipsResponseDto = {
-    memberships: [
-      {
-        accountId: '123e4567-e89b-12d3-a456-426614174002',
-        permissions: ['account:read', 'account:write'],
-      },
-    ],
-  };
-
-  beforeEach(async () => {
-    service = {
-      findUserMemberships: jest.fn(),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [UserMembershipsController],
-      providers: [
-        {
-          provide: 'IMembershipsService',
-          useValue: service,
-        },
-      ],
-    })
-      .overrideGuard(JWTAuthGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
-
-    controller = module.get<UserMembershipsController>(
-      UserMembershipsController,
-    );
-  });
-
-  describe('findUserMemberships', () => {
-    it('should return user memberships', async () => {
-      const userId = '123e4567-e89b-12d3-a456-426614174001';
-      service.findUserMemberships = jest
-        .fn()
-        .mockResolvedValue(mockUserMembershipsResponse);
-
-      const result = await controller.findUserMemberships(userId);
-
-      expect(service.findUserMemberships).toHaveBeenCalledWith(userId);
-      expect(result).toEqual(mockUserMembershipsResponse);
-    });
-  });
-});
-
-describe('AccountMembershipsController', () => {
-  let controller: AccountMembershipsController;
-  let service: Partial<IMembershipsService>;
-
-  const mockMembershipResponse: MembershipResponseDto = {
-    id: '123e4567-e89b-12d3-a456-426614174000',
-    userId: '123e4567-e89b-12d3-a456-426614174001',
-    accountId: '123e4567-e89b-12d3-a456-426614174002',
-    permissions: ['account:read', 'account:write'],
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    user: {
-      id: '123e4567-e89b-12d3-a456-426614174001',
-      email: 'test@example.com',
-    },
-    account: {
-      id: '123e4567-e89b-12d3-a456-426614174002',
-      name: 'Test Account',
-    },
-  };
-
-  beforeEach(async () => {
-    service = {
-      findAccountMemberships: jest.fn(),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [AccountMembershipsController],
-      providers: [
-        {
-          provide: 'IMembershipsService',
-          useValue: service,
-        },
-      ],
-    })
-      .overrideGuard(JWTAuthGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
-
-    controller = module.get<AccountMembershipsController>(
-      AccountMembershipsController,
-    );
-  });
-
-  describe('findAccountMemberships', () => {
-    it('should return account memberships', async () => {
-      const accountId = '123e4567-e89b-12d3-a456-426614174002';
-      service.findAccountMemberships = jest
-        .fn()
-        .mockResolvedValue([mockMembershipResponse]);
-
-      const result = await controller.findAccountMemberships(accountId);
-
-      expect(service.findAccountMemberships).toHaveBeenCalledWith(accountId);
-      expect(result).toEqual([mockMembershipResponse]);
     });
   });
 });

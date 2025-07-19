@@ -17,7 +17,6 @@ import {
   CreateMembershipDto,
   MembershipResponseDto,
   UpdateMembershipDto,
-  UserMembershipsResponseDto,
 } from './dto/membership.dto';
 import { IMembershipsService } from './interfaces/memberships-service.interface';
 
@@ -61,37 +60,5 @@ export class MembershipsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id') id: string): Promise<void> {
     return this.membershipsService.delete(id);
-  }
-}
-
-@Controller('users/:userId/memberships')
-@UseGuards(JWTAuthGuard)
-export class UserMembershipsController {
-  constructor(
-    @Inject('IMembershipsService')
-    private readonly membershipsService: IMembershipsService,
-  ) {}
-
-  @Get()
-  async findUserMemberships(
-    @Param('userId') userId: string,
-  ): Promise<UserMembershipsResponseDto> {
-    return this.membershipsService.findUserMemberships(userId);
-  }
-}
-
-@Controller('accounts/:accountId/memberships')
-@UseGuards(JWTAuthGuard)
-export class AccountMembershipsController {
-  constructor(
-    @Inject('IMembershipsService')
-    private readonly membershipsService: IMembershipsService,
-  ) {}
-
-  @Get()
-  async findAccountMemberships(
-    @Param('accountId') accountId: string,
-  ): Promise<MembershipResponseDto[]> {
-    return this.membershipsService.findAccountMemberships(accountId);
   }
 }
