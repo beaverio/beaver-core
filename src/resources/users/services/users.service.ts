@@ -7,15 +7,15 @@ import {
   UpdateUserDto,
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
-import { IUserRepository } from '../interfaces/user-repository.interface';
-import { IUserService } from '../interfaces/user-service.interface';
+import { IUsersRepository } from '../interfaces/users-repository.interface';
+import { IUserService } from '../interfaces/users-service.interface';
 
 @Injectable()
 export class UsersService implements IUserService {
   constructor(
-    @Inject('IUserRepository')
-    private readonly userRepository: IUserRepository,
-  ) {}
+    @Inject('IUsersRepository')
+    private readonly userRepository: IUsersRepository,
+  ) { }
 
   async createUser(dto: CreateUserDto): Promise<User> {
     return this.userRepository.create({

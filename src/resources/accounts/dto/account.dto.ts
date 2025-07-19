@@ -1,16 +1,18 @@
 import { PartialType, PickType } from '@nestjs/mapped-types';
+import { IsString } from 'class-validator';
 import { BaseDto, CreateUpdateDto } from '../../../common/dto/base.dto';
 import { Account } from '../entities/account.entity';
 
 export class AccountDto extends BaseDto {
-  name?: string
+  @IsString()
+  name: string;
 }
 
-// Create DTO - everything is optional
-export class CreateAccountDto extends CreateUpdateDto(AccountDto, []) { }
+// Upsert DTO - everything is optional
+export class UpsertAccountDto extends CreateUpdateDto(AccountDto, []) { }
 
 // Query Params DTO - get one account by id
-export class QueryParamsUserDto extends PartialType(
+export class QueryParamsAccountDto extends PartialType(
   PickType(AccountDto, ['id'] as const),
 ) { }
 

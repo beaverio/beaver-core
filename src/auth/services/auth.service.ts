@@ -12,7 +12,7 @@ import { createHash } from 'crypto';
 import { Response } from 'express';
 import { CreateUserDto } from 'src/resources/users/dto/user.dto';
 import { User } from 'src/resources/users/entities/user.entity';
-import { IUserService } from 'src/resources/users/interfaces/user-service.interface';
+import { IUserService } from 'src/resources/users/interfaces/users-service.interface';
 import { ISessionService } from '../../common/interfaces/session-service.interface';
 import { IAuthService } from '../interfaces/auth-service.interface';
 import { IRefreshTokenRepository } from '../interfaces/refresh-token-repository.interface';
@@ -29,7 +29,7 @@ export class AuthService implements IAuthService {
     private readonly refreshTokenRepository: IRefreshTokenRepository,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async verifyUser(email: string, password: string): Promise<User> {
     try {
@@ -117,17 +117,17 @@ export class AuthService implements IAuthService {
     const expirationAccessToken = new Date();
     expirationAccessToken.setSeconds(
       expirationAccessToken.getSeconds() +
-        parseInt(
-          this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION'),
-        ),
+      parseInt(
+        this.configService.getOrThrow<string>('JWT_ACCESS_EXPIRATION'),
+      ),
     );
 
     const expirationRefreshToken = new Date();
     expirationRefreshToken.setSeconds(
       expirationRefreshToken.getSeconds() +
-        parseInt(
-          this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION'),
-        ),
+      parseInt(
+        this.configService.getOrThrow<string>('JWT_REFRESH_EXPIRATION'),
+      ),
     );
 
     const payload: ITokenPayload = {

@@ -14,7 +14,7 @@ import { JWTAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { UpdateUserDto, UserResponseDto } from './dto/user.dto';
 import { User } from './entities/user.entity';
-import { IUserService } from './interfaces/user-service.interface';
+import { IUserService } from './interfaces/users-service.interface';
 
 @UseGuards(JWTAuthGuard)
 @Controller('users')
@@ -22,7 +22,7 @@ export class UsersController {
   constructor(
     @Inject('IUserService')
     private readonly usersService: IUserService,
-  ) {}
+  ) { }
 
   @Get()
   async getUsers(

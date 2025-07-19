@@ -10,14 +10,13 @@ import {
   UpdateUserDto,
 } from '../dto/user.dto';
 import { User } from '../entities/user.entity';
-import { IUserRepository } from '../interfaces/user-repository.interface';
+import { IUsersRepository } from '../interfaces/users-repository.interface';
 
 @Injectable()
-export class UserRepository
+export class UsersRepository
   extends BasePaginatedRepository<User>
-  implements IUserRepository
-{
-  private readonly logger = new Logger(UserRepository.name);
+  implements IUsersRepository {
+  private readonly logger = new Logger(UsersRepository.name);
   private readonly CACHE_PREFIX = 'user:';
   private readonly CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
@@ -56,20 +55,6 @@ export class UserRepository
     await this.cacheEntity(savedUser);
     this.logger.debug(`User created and cached: ${savedUser.id}`);
     return savedUser;
-  }
-
-  async findAll(where: QueryParamsUserDto): Promise<User[]> {
-    const queryBuilder = this.repo.createQueryBuilder('user');
-
-    if (where.email) {
-      queryBuilder.andWhere('user.email = :email', { email: where.email });
-    }
-
-    if (where.id) {
-      queryBuilder.andWhere('user.id = :id', { id: where.id });
-    }
-
-    return await queryBuilder.getMany();
   }
 
   async findOne(where: QueryParamsUserDto): Promise<User | null> {
